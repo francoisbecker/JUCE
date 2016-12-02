@@ -513,7 +513,7 @@ public:
 
                             if (AudioProcessorParameter* param = juceFilter->getParameters() [paramID])
                             {
-                                float factor = param->canRamp() ? 1.f : (param->getNumSteps() - 1);
+                                float factor = (param->canRamp() != AudioProcessorParameter::paramCantRamp) ? 1.f : (param->getNumSteps() - 1);
                                 pv->outValue = param->getValueForText (text) * factor;
                             }
                             else
@@ -537,7 +537,7 @@ public:
 
                             if (AudioProcessorParameter* param = juceFilter->getParameters() [paramID])
                             {
-                                float factor = param->canRamp() ? 1.f : (param->getNumSteps() - 1);
+                                float factor = (param->canRamp() != AudioProcessorParameter::paramCantRamp) ? 1.f : (param->getNumSteps() - 1);
                                 text = param->getText (value / factor, 0);
                             }
                             else
@@ -822,7 +822,7 @@ public:
                 outParameterInfo.flags |= kAudioUnitParameterFlag_NonRealTime;
 
             // set whether the param can be ramped
-            bool canRamp = juceFilter->canParameterRamp(index);
+            bool canRamp = (juceFilter->canParameterRamp(index) != AudioProcessorParameter::paramCantRamp);
             if (canRamp)
                 outParameterInfo.flags |= kAudioUnitParameterFlag_CanRamp;
 
@@ -855,7 +855,8 @@ public:
         {
             const int index = getJuceIndexForAUParameterID (inID);
 
-            float factor = juceFilter->canParameterRamp(index) ? 1.f : (juceFilter->getParameterNumSteps(index) - 1);
+            bool canRamp = (juceFilter->canParameterRamp(index) != AudioProcessorParameter::paramCantRamp);
+            float factor = canRamp ? 1.f : (juceFilter->getParameterNumSteps(index) - 1);
             outValue = juceFilter->getParameter (index) * factor;
             return noErr;
         }
@@ -873,7 +874,8 @@ public:
         {
             const int index = getJuceIndexForAUParameterID (inID);
 
-            float factor = juceFilter->canParameterRamp(index) ? 1.f : (juceFilter->getParameterNumSteps(index) - 1);
+            bool canRamp = (juceFilter->canParameterRamp(index) != AudioProcessorParameter::paramCantRamp);
+            float factor = canRamp ? 1.f : (juceFilter->getParameterNumSteps(index) - 1);
             juceFilter->setParameter (index, inValue / factor);
             return noErr;
         }

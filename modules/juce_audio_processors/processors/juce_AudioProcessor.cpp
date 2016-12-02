@@ -648,12 +648,12 @@ bool AudioProcessor::isMetaParameter (int index) const
     return false;
 }
 
-bool AudioProcessor::canParameterRamp (int index) const
+AudioProcessorParameter::RampCapability AudioProcessor::canParameterRamp (int index) const
 {
     if (AudioProcessorParameter* p = managedParameters[index])
         return p->canRamp();
     
-    return false;
+    return AudioProcessorParameter::oldRampCompatibility;
 }
 
 AudioProcessorParameter* AudioProcessor::getParamChecked (int index) const noexcept
@@ -1312,7 +1312,7 @@ void AudioProcessorParameter::endChangeGesture()
 bool AudioProcessorParameter::isOrientationInverted() const { return false; }
 bool AudioProcessorParameter::isAutomatable() const         { return true; }
 bool AudioProcessorParameter::isMetaParameter() const       { return false; }
-bool AudioProcessorParameter::canRamp() const               { return getNumSteps() > 1000; }
+AudioProcessorParameter::RampCapability AudioProcessorParameter::canRamp() const { return oldRampCompatibility; }
 int AudioProcessorParameter::getNumSteps() const            { return AudioProcessor::getDefaultNumParameterSteps(); }
 
 String AudioProcessorParameter::getText (float value, int /*maximumStringLength*/) const

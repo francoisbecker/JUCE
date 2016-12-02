@@ -216,8 +216,9 @@ public:
             toString128 (info.shortTitle, p.getParameterName (index, 8));
             toString128 (info.units, p.getParameterLabel (index));
 
-            // From the VST3 documentation, continuous = rampable parameters must be declared with 0 as a number of steps
-            if (p.canParameterRamp (index))
+            /** From the VST3 documentation, continuous = rampable parameters
+                must be declared with a number of steps of 0. */
+            if (p.canParameterRamp (index) != AudioProcessorParameter::paramCantRamp)
             {
                 info.stepCount = (Steinberg::int32) 0;
             }

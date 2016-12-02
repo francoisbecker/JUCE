@@ -84,7 +84,7 @@ public:
                                                     float defaultValue,
                                                     std::function<String (float)> valueToTextFunction,
                                                     std::function<float (const String&)> textToValueFunction,
-                                                    bool pCanRamp);
+                                                    AudioProcessorParameter::RampCapability canRamp = AudioProcessorParameter::oldRampCompatibility);
 
     /** Returns a parameter by its ID string. */
     AudioProcessorParameter* getParameter (StringRef parameterID) const noexcept;

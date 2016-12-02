@@ -33,14 +33,14 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
                NormalisableRange<float> r, float defaultVal,
                std::function<String (float)> valueToText,
                std::function<float (const String&)> textToValue,
-               bool pCanRamp = true)
+               RampCapability canRamp = oldRampCompatibility)
         : AudioProcessorParameterWithID (parameterID, paramName),
           owner (s), label (labelText),
           valueToTextFunction (valueToText),
           textToValueFunction (textToValue),
           range (r), value (defaultVal), defaultValue (defaultVal),
           listenersNeedCalling (true),
-          mCanRamp (pCanRamp)
+          mCanRamp (canRamp)
     {
         state.addListener (this);
         needsUpdate.set (1);
@@ -76,7 +76,7 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
         return AudioProcessor::getDefaultNumParameterSteps();
     }
 
-    bool canRamp() const override
+    RampCapability canRamp() const override
     {
         return mCanRamp;
     }
@@ -164,7 +164,7 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
     float value, defaultValue;
     Atomic<int> needsUpdate;
     bool listenersNeedCalling;
-    bool mCanRamp;
+    RampCapability mCanRamp;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Parameter)
 };
@@ -188,14 +188,14 @@ AudioProcessorParameter* AudioProcessorValueTreeState::createAndAddParameter (St
                                                                               NormalisableRange<float> r, float defaultVal,
                                                                               std::function<String (float)> valueToTextFunction,
                                                                               std::function<float (const String&)> textToValueFunction,
-                                                                              bool pCanRamp = true)
+                                                                              AudioProcessorParameter::RampCapability canRamp)
 {
     // All parameters must be created before giving this manager a ValueTree state!
     jassert (! state.isValid());
     jassert (MessageManager::getInstance()->isThisTheMessageThread());
 
     Parameter* p = new Parameter (*this, paramID, paramName, labelText, r,
-                                  defaultVal, valueToTextFunction, textToValueFunction, pCanRamp);
+                                  defaultVal, valueToTextFunction, textToValueFunction, canRamp);
     processor.addParameter (p);
     return p;
 }
