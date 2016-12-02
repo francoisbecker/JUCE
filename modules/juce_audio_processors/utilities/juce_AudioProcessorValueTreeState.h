@@ -83,7 +83,8 @@ public:
                                                     NormalisableRange<float> valueRange,
                                                     float defaultValue,
                                                     std::function<String (float)> valueToTextFunction,
-                                                    std::function<float (const String&)> textToValueFunction);
+                                                    std::function<float (const String&)> textToValueFunction,
+                                                    bool pCanRamp);
 
     /** Returns a parameter by its ID string. */
     AudioProcessorParameter* getParameter (StringRef parameterID) const noexcept;

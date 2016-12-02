@@ -1099,6 +1099,13 @@ public:
     */
     virtual bool isMetaParameter (int parameterIndex) const;
 
+    /** See AudioProcessorParameter::canRamp().
+
+        NOTE! This method will eventually be deprecated! It's recommended that you use
+        AudioProcessorParameter::canRamp() instead.
+    */
+    virtual bool canParameterRamp (int index) const;
+    
     /** Sends a signal to the host to tell it that the user is about to start changing this
         parameter.
 

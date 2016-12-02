@@ -143,6 +143,19 @@ public:
     */
     virtual bool isMetaParameter() const;
 
+    /** Should return true if this parameter can be automated with ramps, false
+        if this parameter must be automated with abrupt steps. This is not
+        directly related to the number of steps as some fine-grained parameters
+        could want to avoid intermediate values on automation (e.g. parameters
+        with zipper noise), and other parameters with only a few discrete values
+        could be designed to take the intermediate values during their
+        automation.
+
+        For backward-compatibility with the previous AAX wrapper behaviour, by
+        default this returns true when the number of steps is greater than 1000.
+    */
+    virtual bool canRamp() const;
+
     /** Returns the index of this parameter in its parent processor's parameter list. */
     int getParameterIndex() const noexcept              { return parameterIndex; }
 

@@ -512,7 +512,10 @@ public:
                             const String text (String::fromCFString (pv->inString));
 
                             if (AudioProcessorParameter* param = juceFilter->getParameters() [paramID])
-                                pv->outValue = param->getValueForText (text);
+                            {
+                                float factor = param->canRamp() ? 1.f : (param->getNumSteps() - 1);
+                                pv->outValue = param->getValueForText (text) * factor;
+                            }
                             else
                                 pv->outValue = text.getFloatValue();
 
@@ -533,7 +536,10 @@ public:
                             String text;
 
                             if (AudioProcessorParameter* param = juceFilter->getParameters() [paramID])
-                                text = param->getText (value, 0);
+                            {
+                                float factor = param->canRamp() ? 1.f : (param->getNumSteps() - 1);
+                                text = param->getText (value / factor, 0);
+                            }
                             else
                                 text = String (value);
 
@@ -815,17 +821,24 @@ public:
             if (name.isEmpty() || ! juceFilter->isParameterAutomatable (index))
                 outParameterInfo.flags |= kAudioUnitParameterFlag_NonRealTime;
 
+            // set whether the param can be ramped
+            bool canRamp = juceFilter->canParameterRamp(index);
+            if (canRamp)
+                outParameterInfo.flags |= kAudioUnitParameterFlag_CanRamp;
+
             if (juceFilter->isMetaParameter (index))
                 outParameterInfo.flags |= kAudioUnitParameterFlag_IsGlobalMeta;
 
             MusicDeviceBase::FillInParameterName (outParameterInfo, name.toCFString(), true);
 
             outParameterInfo.minValue = 0.0f;
-            outParameterInfo.maxValue = 1.0f;
-            outParameterInfo.defaultValue = juceFilter->getParameterDefaultValue (index);
+            outParameterInfo.maxValue = canRamp ? 1.0f : (juceFilter->getParameterNumSteps(index) - 1);
+            outParameterInfo.defaultValue = juceFilter->getParameterDefaultValue (index) * (canRamp ? 1.f : outParameterInfo.maxValue);
             jassert (outParameterInfo.defaultValue >= outParameterInfo.minValue
                       && outParameterInfo.defaultValue <= outParameterInfo.maxValue);
-            outParameterInfo.unit = kAudioUnitParameterUnit_Generic;
+            outParameterInfo.unit = canRamp
+                                  ? kAudioUnitParameterUnit_Generic
+                                  : kAudioUnitParameterUnit_Indexed;
 
             return noErr;
         }
@@ -842,7 +855,8 @@ public:
         {
             const int index = getJuceIndexForAUParameterID (inID);
 
-            outValue = juceFilter->getParameter (index);
+            float factor = juceFilter->canParameterRamp(index) ? 1.f : (juceFilter->getParameterNumSteps(index) - 1);
+            outValue = juceFilter->getParameter (index) * factor;
             return noErr;
         }
 
@@ -859,7 +873,8 @@ public:
         {
             const int index = getJuceIndexForAUParameterID (inID);
 
-            juceFilter->setParameter (index, inValue);
+            float factor = juceFilter->canParameterRamp(index) ? 1.f : (juceFilter->getParameterNumSteps(index) - 1);
+            juceFilter->setParameter (index, inValue / factor);
             return noErr;
         }
 
