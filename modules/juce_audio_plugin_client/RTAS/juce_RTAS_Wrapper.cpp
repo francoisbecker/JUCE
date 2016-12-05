@@ -477,7 +477,11 @@ public:
         AddControl (new CPluginControl_OnOff ('bypa', "Master Bypass\nMastrByp\nMByp\nByp", false, true));
         DefineMasterBypassControlIndex (bypassControlIndex);
 
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int numParameters = 0;
+       #else
         const int numParameters = juceFilter->getNumParameters();
+       #endif
 
        #if JUCE_FORCE_USE_LEGACY_PARAM_IDS
         const bool usingManagedParameters = false;

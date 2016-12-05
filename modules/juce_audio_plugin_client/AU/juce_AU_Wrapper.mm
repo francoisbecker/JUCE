@@ -804,7 +804,12 @@ public:
 
         if (inScope == kAudioUnitScope_Global
              && juceFilter != nullptr
-             && index < juceFilter->getNumParameters())
+            #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+             && index < 0
+            #else
+             && index < juceFilter->getNumParameters()
+            #endif
+            )
         {
             outParameterInfo.flags = (UInt32) (kAudioUnitParameterFlag_IsWritable
                                                 | kAudioUnitParameterFlag_IsReadable
@@ -1690,14 +1695,22 @@ private:
     void addParameters()
     {
         // check if all parameters are managed?
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int numParams = 0;
+       #else
         const int numParams = juceFilter->getNumParameters();
+       #endif
 
       #if ! JUCE_FORCE_USE_LEGACY_PARAM_IDS
         usingManagedParameter = (juceFilter->getParameters().size() == numParams);
 
         if (usingManagedParameter)
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            const int n = 0;
+           #else
             const int n = juceFilter->getNumParameters();
+           #endif
 
             for (int i = 0; i < n; ++i)
             {
@@ -1727,7 +1740,11 @@ private:
    #else
     AudioUnitParameterID generateAUParameterIDForIndex (int paramIndex) const
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int n = 0;
+       #else
         const int n = juceFilter->getNumParameters();
+       #endif
 
         if (isPositiveAndBelow (paramIndex, n))
         {
