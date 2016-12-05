@@ -120,6 +120,11 @@ namespace AAXClasses
 
     static bool isBypassParam (AAX_CParamID paramID) noexcept
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        if (paramID == nullptr)
+            return false;
+       #endif
+        
         return AAX::IsParameterIDEqual (paramID, cDefaultMasterBypassID) != 0;
     }
 
@@ -652,7 +657,11 @@ namespace AAXClasses
             // * The preset is loaded in PT 10 using the AAX version.
             // * The session is then saved, and closed.
             // * The saved session is loaded, but acting as if the preset was never loaded.
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            const int numParameters = 0;
+           #else
             const int numParameters = pluginInstance->getNumParameters();
+           #endif
 
             for (int i = 0; i < numParameters; ++i)
                 SetParameterNormalizedValue (getAAXParamIDFromJuceIndex (i), (double) pluginInstance->getParameter(i));
@@ -766,6 +775,10 @@ namespace AAXClasses
         {
             if (isBypassParam (paramID))
                 return AAX_CEffectParameters::SetParameterNormalizedValue (paramID, newValue);
+            
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            return AAX_SUCCESS;
+           #endif
 
             if (AAX_IParameter* p = const_cast<AAX_IParameter*> (mParameterManager.GetParameterByID (paramID)))
                 p->SetValueWithFloat ((float) newValue);
@@ -1243,7 +1256,11 @@ namespace AAXClasses
         {
             AudioProcessor& audioProcessor = getPluginInstance();
 
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            const int numParameters = 0;
+           #else
             const int numParameters = audioProcessor.getNumParameters();
+           #endif
 
            #if JUCE_FORCE_USE_LEGACY_PARAM_IDS
             const bool usingManagedParameters = false;
