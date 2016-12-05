@@ -143,6 +143,34 @@ public:
     */
     virtual bool isMetaParameter() const;
 
+    /** Defines how the intermediate values between two automation points behave
+        in automation lanes of DAWs.
+    */
+    enum RampCapability
+    {
+        paramCantRamp = 0,       /**< Stepped parameters in the automation lane,
+                                      intermediate values are not taken. */
+        paramCanRamp = 1,        /**< Successive automation points are linearly
+                                      interpolated in the automation lanes. */
+        oldRampCompatibility = 2 /**< Parameter are ramped, except with AAX when
+                                      the number of steps is <= 1000. Should be
+                                      avoided for new plug-ins and new
+                                      parameters. */
+    };
+
+    /** Should return paramCanRamp if this parameter can be automated with ramps,
+        paramCantRamp if this parameter must be automated with abrupt steps. This
+        is not directly related to the number of steps as some fine-grained parameters
+        could want to avoid intermediate values on automation (e.g. parameters
+        with zipper noise), and other parameters with only a few discrete values
+        could be designed to take the intermediate values during their
+        automation.
+
+        For backward-compatibility with the previous AAX wrapper behaviour, by
+        default this returns oldRampCompatibility.
+    */
+    virtual RampCapability canRamp() const;
+
     /** Returns the index of this parameter in its parent processor's parameter list. */
     int getParameterIndex() const noexcept              { return parameterIndex; }
 

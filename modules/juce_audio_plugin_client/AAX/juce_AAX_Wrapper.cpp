@@ -1273,8 +1273,19 @@ namespace AAXClasses
 
                 const int parameterNumSteps = audioProcessor.getParameterNumSteps (parameterIndex);
                 parameter->SetNumberOfSteps ((uint32_t) parameterNumSteps);
-                parameter->SetType (parameterNumSteps > 1000 ? AAX_eParameterType_Continuous
-                                                             : AAX_eParameterType_Discrete);
+                switch (audioProcessor.canParameterRamp (parameterIndex))
+                {
+                    case AudioProcessorParameter::paramCanRamp:
+                        parameter->SetType (AAX_eParameterType_Continuous);
+                        break;
+                    case AudioProcessorParameter::paramCantRamp:
+                        parameter->SetType (AAX_eParameterType_Discrete);
+                        break;
+                    case AudioProcessorParameter::oldRampCompatibility:
+                        parameter->SetType (parameterNumSteps > 1000 ? AAX_eParameterType_Continuous
+                                                                     : AAX_eParameterType_Discrete);
+                        break;
+                }
 
                 parameter->SetOrientation (audioProcessor.isParameterOrientationInverted (parameterIndex)
                                             ? (AAX_eParameterOrientation_RightMinLeftMax | AAX_eParameterOrientation_TopMinBottomMax

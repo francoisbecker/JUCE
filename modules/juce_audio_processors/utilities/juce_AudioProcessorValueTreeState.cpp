@@ -32,13 +32,15 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
                String parameterID, String paramName, String labelText,
                NormalisableRange<float> r, float defaultVal,
                std::function<String (float)> valueToText,
-               std::function<float (const String&)> textToValue)
+               std::function<float (const String&)> textToValue,
+               RampCapability canRamp = oldRampCompatibility)
         : AudioProcessorParameterWithID (parameterID, paramName),
           owner (s), label (labelText),
           valueToTextFunction (valueToText),
           textToValueFunction (textToValue),
           range (r), value (defaultVal), defaultValue (defaultVal),
-          listenersNeedCalling (true)
+          listenersNeedCalling (true),
+          mCanRamp (canRamp)
     {
         state.addListener (this);
         needsUpdate.set (1);
@@ -72,6 +74,11 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
             return (static_cast<int> ((range.end - range.start) / range.interval) + 1);
 
         return AudioProcessor::getDefaultNumParameterSteps();
+    }
+
+    RampCapability canRamp() const override
+    {
+        return mCanRamp;
     }
 
     void setValue (float newValue) override
@@ -157,6 +164,7 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
     float value, defaultValue;
     Atomic<int> needsUpdate;
     bool listenersNeedCalling;
+    RampCapability mCanRamp;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Parameter)
 };
@@ -179,14 +187,15 @@ AudioProcessorValueTreeState::~AudioProcessorValueTreeState() {}
 AudioProcessorParameter* AudioProcessorValueTreeState::createAndAddParameter (String paramID, String paramName, String labelText,
                                                                               NormalisableRange<float> r, float defaultVal,
                                                                               std::function<String (float)> valueToTextFunction,
-                                                                              std::function<float (const String&)> textToValueFunction)
+                                                                              std::function<float (const String&)> textToValueFunction,
+                                                                              AudioProcessorParameter::RampCapability canRamp)
 {
     // All parameters must be created before giving this manager a ValueTree state!
     jassert (! state.isValid());
     jassert (MessageManager::getInstance()->isThisTheMessageThread());
 
     Parameter* p = new Parameter (*this, paramID, paramName, labelText, r,
-                                  defaultVal, valueToTextFunction, textToValueFunction);
+                                  defaultVal, valueToTextFunction, textToValueFunction, canRamp);
     processor.addParameter (p);
     return p;
 }

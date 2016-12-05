@@ -216,8 +216,18 @@ public:
             toString128 (info.shortTitle, p.getParameterName (index, 8));
             toString128 (info.units, p.getParameterLabel (index));
 
-            const int numSteps = p.getParameterNumSteps (index);
-            info.stepCount = (Steinberg::int32) (numSteps > 0 && numSteps < 0x7fffffff ? numSteps - 1 : 0);
+            /** From the VST3 documentation, continuous = rampable parameters
+                must be declared with a number of steps of 0. */
+            if (p.canParameterRamp (index) != AudioProcessorParameter::paramCantRamp)
+            {
+                info.stepCount = (Steinberg::int32) 0;
+            }
+            else
+            {
+                const int numSteps = p.getParameterNumSteps (index);
+                info.stepCount = (Steinberg::int32) (numSteps > 0 && numSteps < 0x7fffffff ? numSteps - 1 : 0);
+            }
+
             info.defaultNormalizedValue = p.getParameterDefaultValue (index);
             jassert (info.defaultNormalizedValue >= 0 && info.defaultNormalizedValue <= 1.0f);
             info.unitId = Vst::kRootUnitId;
