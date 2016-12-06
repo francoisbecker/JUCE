@@ -218,7 +218,7 @@ public:
 
             /** From the VST3 documentation, continuous = rampable parameters
                 must be declared with a number of steps of 0. */
-            if (p.canParameterRamp (index) != AudioProcessorParameter::paramCantRamp)
+            if (p.canParameterRamp (index) == AudioProcessorParameter::paramCanRamp)
             {
                 info.stepCount = (Steinberg::int32) 0;
             }
