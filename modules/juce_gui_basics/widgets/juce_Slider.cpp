@@ -37,6 +37,7 @@ public:
         velocityModeOffset (0.0), velocityModeThreshold (1),
         sliderRegionStart (0), sliderRegionSize (1), sliderBeingDragged (-1),
         pixelsForFullDragExtent (250),
+    	allowNudgingOfOtherValues(true),
         textBoxPos (textBoxPosition),
         numDecimalPlaces (7),
         textBoxWidth (80), textBoxHeight (20),
@@ -393,9 +394,9 @@ public:
                 setValue (currentValue.getValue(), dontSendNotification);
         }
         else if (value.refersToSameSourceAs (valueMin))
-            setMinValue (valueMin.getValue(), dontSendNotification, true);
+            setMinValue (valueMin.getValue(), dontSendNotification, allowNudgingOfOtherValues);
         else if (value.refersToSameSourceAs (valueMax))
-            setMaxValue (valueMax.getValue(), dontSendNotification, true);
+            setMaxValue (valueMax.getValue(), dontSendNotification, allowNudgingOfOtherValues);
     }
 
     void labelTextChanged (Label* label) override
@@ -915,7 +916,7 @@ public:
             else if (sliderBeingDragged == 1)
             {
                 setMinValue (owner.snapValue (valueWhenLastDragged, dragMode),
-                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, true);
+                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, allowNudgingOfOtherValues);
 
                 if (e.mods.isShiftDown())
                     setMaxValue (getMinValue() + minMaxDiff, dontSendNotification, true);
@@ -925,7 +926,7 @@ public:
             else if (sliderBeingDragged == 2)
             {
                 setMaxValue (owner.snapValue (valueWhenLastDragged, dragMode),
-                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, true);
+                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, allowNudgingOfOtherValues);
 
                 if (e.mods.isShiftDown())
                     setMinValue (getMaxValue() - minMaxDiff, dontSendNotification, true);
@@ -1195,6 +1196,7 @@ public:
     Time lastMouseWheelTime;
     Rectangle<int> sliderRect;
     ScopedPointer<DragInProgress> currentDrag;
+    bool allowNudgingOfOtherValues;
 
     TextEntryBoxPosition textBoxPos;
     String textSuffix;
@@ -1453,6 +1455,11 @@ void Slider::setMaxValue (double newValue, const NotificationType notification, 
 void Slider::setMinAndMaxValues (double newMinValue, double newMaxValue, const NotificationType notification)
 {
     pimpl->setMinAndMaxValues (newMinValue, newMaxValue, notification);
+}
+
+void Slider::allowNudgingOfOtherValues(bool allow)
+{
+    pimpl->allowNudgingOfOtherValues = allow;
 }
 
 void Slider::setDoubleClickReturnValue (bool isDoubleClickEnabled,  double valueToSetOnDoubleClick)
