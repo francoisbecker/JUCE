@@ -513,6 +513,14 @@ public:
     */
     void setMinAndMaxValues (double newMinValue, double newMaxValue,
                              NotificationType notification = sendNotificationAsync);
+    
+    /** For a slider with two or three thumbs, this sets the interaction model between values.
+     	
+     	If false, a thumb value will be restricted to being above the min or mid value,
+     	and below the max or mid value. If true, then if this value goes beyond those values,
+     	it will push thema along with it.
+     */
+    void allowNudgingOfOtherValues(bool pAllow);
 
     //==============================================================================
     /** A class for receiving callbacks from a Slider.
