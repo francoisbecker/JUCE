@@ -434,6 +434,18 @@ public:
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProgramChangeParameter)
     };
+    
+    #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+    int getNumParametersIfNonPublished(AudioProcessor* pluginInstance)
+    {
+        return 1 // bypass parameter
+               + (pluginInstance->getNumPrograms() > 1 ? 1 : 0) // preset parameter
+        #if JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS
+               + 1 // midi parameter
+        #endif
+        ;
+    }
+    #endif
 
     //==============================================================================
     tresult PLUGIN_API setComponentState (IBStream* stream) override
@@ -442,7 +454,7 @@ public:
         if (AudioProcessor* const pluginInstance = getPluginInstance())
         {
            #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
-            const int numParameters = 0;
+            const int numParameters = getNumParametersIfNonPublished(pluginInstance);
            #else
             const int numParameters = pluginInstance->getNumParameters();
            #endif
@@ -546,9 +558,12 @@ public:
 
     void audioProcessorParameterChanged (AudioProcessor*, int index, float newValue) override
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+       #else
         // NB: Cubase has problems if performEdit is called without setParamNormalized
         EditController::setParamNormalized (getVSTParamIDForIndex (index), (double) newValue);
         performEdit (getVSTParamIDForIndex (index), (double) newValue);
+       #endif
     }
 
     void audioProcessorParameterChangeGestureEnd (AudioProcessor*, int index) override          { endEdit (getVSTParamIDForIndex (index)); }
