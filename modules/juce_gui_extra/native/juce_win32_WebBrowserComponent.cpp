@@ -27,6 +27,8 @@ JUCE_COMCLASS (IConnectionPointContainer, "B196B284-BAB4-101A-B69C-00AA00341D07"
 JUCE_COMCLASS (IWebBrowser2,              "D30C1661-CDAF-11D0-8A3E-00C04FC9E26E")
 JUCE_COMCLASS (WebBrowser,                "8856F961-340A-11D0-A96B-00C04FD705A2")
 
+#include "Mshtml.h"
+
 class WebBrowserComponent::Pimpl   : public ActiveXControlComponent
 {
 public:
@@ -69,6 +71,50 @@ public:
                 EventHandler* handler = new EventHandler (*owner);
                 connectionPoint->Advise (handler, &adviseCookie);
                 handler->Release();
+            }
+        }
+    }
+
+    void displayHTML(const String& pHTML)
+    {
+        if (browser)
+        {
+            HRESULT hr;
+            LPDISPATCH lpDispatch;
+            hr = browser->get_Document(&lpDispatch);
+            if (FAILED(hr)) return;
+            if (!lpDispatch) return;
+
+            IHTMLDocument2* lHTMLDoc = nullptr;
+            hr = lpDispatch->QueryInterface(IID_IHTMLDocument2, (void**)(&lHTMLDoc));
+            if (FAILED(hr)) return;
+
+            SAFEARRAY* psaStrings = SafeArrayCreateVector(VT_VARIANT, 0, 1);
+            if (!psaStrings)
+            {
+                return;
+            }
+
+            BSTR bstr = SysAllocString((const OLECHAR*)pHTML.toWideCharPointer());
+            if (bstr)
+            {
+                VARIANT* param;
+                hr = SafeArrayAccessData(psaStrings, (LPVOID*)&param);
+                if (SUCCEEDED(hr))
+                {
+                    param->vt = VT_BSTR;
+                    param->bstrVal = bstr;
+                    hr = SafeArrayUnaccessData(psaStrings);
+                    if (SUCCEEDED(hr))
+                    {
+                        lHTMLDoc->write(psaStrings);
+                        lHTMLDoc->close();
+                    }
+                }
+            }
+            if (psaStrings)
+            {
+                SafeArrayDestroy(psaStrings);
             }
         }
     }
@@ -219,6 +265,19 @@ WebBrowserComponent::WebBrowserComponent (const bool unloadPageWhenBrowserIsHidd
 WebBrowserComponent::~WebBrowserComponent()
 {
     delete browser;
+}
+
+//==============================================================================
+void WebBrowserComponent::displayHTML (const String& pHTML)
+{
+    blankPageShown = false;
+
+    if (browser->browser == nullptr)
+    {
+        checkWindowAssociation();
+    }
+
+    browser->displayHTML (pHTML);
 }
 
 //==============================================================================
