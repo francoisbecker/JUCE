@@ -22,8 +22,7 @@
   ==============================================================================
 */
 
-#ifndef JUCER_DEPENDENCYPATHPROPERTYCOMPONENT_H_INCLUDED
-#define JUCER_DEPENDENCYPATHPROPERTYCOMPONENT_H_INCLUDED
+#pragma once
 
 
 //==============================================================================
@@ -46,10 +45,10 @@ public:
     var getValue() const override
     {
         if (isUsingProjectSettings())
-            return projectSettingsValue;
+            return projectSettingsValue.getValue();
 
         if (isUsingGlobalSettings())
-            return globalSettingsValue;
+            return globalSettingsValue.getValue();
 
         return fallbackValue;
     }
@@ -178,6 +177,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DependencyPathPropertyComponent)
 };
-
-
-#endif  // JUCER_DEPENDENCYPATHPROPERTYCOMPONENT_H_INCLUDED
