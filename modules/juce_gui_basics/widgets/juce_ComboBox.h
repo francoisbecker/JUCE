@@ -22,8 +22,7 @@
   ==============================================================================
 */
 
-#ifndef JUCE_COMBOBOX_H_INCLUDED
-#define JUCE_COMBOBOX_H_INCLUDED
+#pragma once
 
 
 //==============================================================================
@@ -272,7 +271,7 @@ public:
     /** Returns the PopupMenu object associated with the ComboBox.
         Can be useful for adding sub-menus to the ComboBox standard PopupMenu
     */
-    PopupMenu *getRootMenu() { return &currentMenu; }
+    PopupMenu* getRootMenu() { return &currentMenu; }
 
     //==============================================================================
     /**
@@ -447,5 +446,3 @@ private:
 
 /** This typedef is just for compatibility with old code - newer code should use the ComboBox::Listener class directly. */
 typedef ComboBox::Listener ComboBoxListener;
-
-#endif   // JUCE_COMBOBOX_H_INCLUDED

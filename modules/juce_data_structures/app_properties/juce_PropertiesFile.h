@@ -22,8 +22,7 @@
   ==============================================================================
 */
 
-#ifndef JUCE_PROPERTIESFILE_H_INCLUDED
-#define JUCE_PROPERTIESFILE_H_INCLUDED
+#pragma once
 
 
 //==============================================================================
@@ -71,7 +70,7 @@ public:
             ".settings") then the suffix of applicationName will be replaced with your suffix
             ("MyApp.exe" -> "MyApp.settings"). If your filenameSuffix does NOT include the dot,
             then the suffix will be appended to the applicationName ("MyApp.exe" ->
-            "MyApp.settings.exe").
+            "MyApp.exe.settings").
         */
         String filenameSuffix;
 
@@ -247,5 +246,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PropertiesFile)
 };
-
-#endif   // JUCE_PROPERTIESFILE_H_INCLUDED

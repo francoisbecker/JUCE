@@ -11,8 +11,7 @@
 
 */
 
-#ifndef __JUCE_APPCONFIG_0NRD9LLGO__
-#define __JUCE_APPCONFIG_0NRD9LLGO__
+#pragma once
 
 //==============================================================================
 // [BEGIN_USER_CODE_SECTION]
@@ -105,6 +104,10 @@
 
 #ifndef    JUCE_FORCE_USE_LEGACY_PARAM_IDS
  //#define JUCE_FORCE_USE_LEGACY_PARAM_IDS
+#endif
+
+#ifndef    JUCE_USE_STUDIO_ONE_COMPATIBLE_PARAMETERS
+ //#define JUCE_USE_STUDIO_ONE_COMPATIBLE_PARAMETERS
 #endif
 
 //==============================================================================
@@ -209,7 +212,6 @@
  //#define JUCE_ENABLE_LIVE_CONSTANT_EDITOR
 #endif
 
-
 //==============================================================================
 // Audio plugin settings..
 
@@ -217,13 +219,13 @@
  #define JucePlugin_Build_VST              1
 #endif
 #ifndef  JucePlugin_Build_VST3
- #define JucePlugin_Build_VST3             1
+ #define JucePlugin_Build_VST3             0
 #endif
 #ifndef  JucePlugin_Build_AU
  #define JucePlugin_Build_AU               1
 #endif
 #ifndef  JucePlugin_Build_AUv3
- #define JucePlugin_Build_AUv3             0
+ #define JucePlugin_Build_AUv3             1
 #endif
 #ifndef  JucePlugin_Build_RTAS
  #define JucePlugin_Build_RTAS             0
@@ -232,7 +234,7 @@
  #define JucePlugin_Build_AAX              0
 #endif
 #ifndef  JucePlugin_Build_STANDALONE
- #define JucePlugin_Build_STANDALONE       0
+ #define JucePlugin_Build_STANDALONE       1
 #endif
 #ifndef  JucePlugin_Name
  #define JucePlugin_Name                   "Juce Demo Plugin"
@@ -336,5 +338,3 @@
 #ifndef  JucePlugin_AAXDisableMultiMono
  #define JucePlugin_AAXDisableMultiMono    0
 #endif
-
-#endif  // __JUCE_APPCONFIG_0NRD9LLGO__
