@@ -11,8 +11,7 @@
 
 */
 
-#ifndef __JUCE_APPCONFIG_NXASZK__
-#define __JUCE_APPCONFIG_NXASZK__
+#pragma once
 
 //==============================================================================
 // [BEGIN_USER_CODE_SECTION]
@@ -107,6 +106,10 @@
 
 #ifndef    JUCE_FORCE_USE_LEGACY_PARAM_IDS
  //#define JUCE_FORCE_USE_LEGACY_PARAM_IDS
+#endif
+
+#ifndef    JUCE_USE_STUDIO_ONE_COMPATIBLE_PARAMETERS
+ //#define JUCE_USE_STUDIO_ONE_COMPATIBLE_PARAMETERS
 #endif
 
 //==============================================================================
@@ -218,7 +221,6 @@
 #ifndef    JUCE_USE_CAMERA
  //#define JUCE_USE_CAMERA
 #endif
-
 
 //==============================================================================
 // Audio plugin settings..
@@ -346,5 +348,3 @@
 #ifndef  JucePlugin_AAXDisableMultiMono
  #define JucePlugin_AAXDisableMultiMono    0
 #endif
-
-#endif  // __JUCE_APPCONFIG_NXASZK__

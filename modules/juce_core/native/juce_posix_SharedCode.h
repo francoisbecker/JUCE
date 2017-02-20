@@ -1,27 +1,29 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2016 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   Permission is granted to use this software under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license/
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   Permission to use, copy, modify, and/or distribute this software for any
+   purpose with or without fee is hereby granted, provided that the above
+   copyright notice and this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
+   THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD
+   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+   FITNESS. IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT,
+   OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF
+   USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+   TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+   OF THIS SOFTWARE.
 
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
+   -----------------------------------------------------------------------------
 
-   For more details, visit www.juce.com
+   To release a closed-source product which uses other parts of JUCE not
+   licensed under the ISC terms, commercial licenses are available: visit
+   www.juce.com for more information.
 
   ==============================================================================
 */
@@ -217,6 +219,12 @@ bool File::setAsCurrentWorkingDirectory() const
     return chdir (getFullPathName().toUTF8()) == 0;
 }
 
+#if JUCE_ANDROID
+ typedef unsigned long juce_sigactionflags_type;
+#else
+ typedef int juce_sigactionflags_type;
+#endif
+
 //==============================================================================
 // The unix siginterrupt function is deprecated - this does the same job.
 int juce_siginterrupt (int sig, int flag)
@@ -225,9 +233,9 @@ int juce_siginterrupt (int sig, int flag)
     (void) ::sigaction (sig, nullptr, &act);
 
     if (flag != 0)
-        act.sa_flags &= ~SA_RESTART;
+        act.sa_flags &= static_cast<juce_sigactionflags_type> (~SA_RESTART);
     else
-        act.sa_flags |= SA_RESTART;
+        act.sa_flags |= static_cast<juce_sigactionflags_type> (SA_RESTART);
 
     return ::sigaction (sig, &act, nullptr);
 }
@@ -367,7 +375,7 @@ static bool setFileModeFlags (const String& fullPath, mode_t flags, bool shouldS
     else
         info.st_mode &= ~flags;
 
-    return chmod (fullPath.toUTF8(), info.st_mode) == 0;
+    return chmod (fullPath.toUTF8(), (mode_t) info.st_mode) == 0;
 }
 
 bool File::setFileReadOnlyInternal (bool shouldBeReadOnly) const
@@ -404,8 +412,8 @@ bool File::setFileTimesInternal (int64 modificationTime, int64 accessTime, int64
     if ((modificationTime != 0 || accessTime != 0) && juce_stat (fullPath, info))
     {
         struct utimbuf times;
-        times.actime  = accessTime != 0       ? (time_t) (accessTime / 1000)       : info.st_atime;
-        times.modtime = modificationTime != 0 ? (time_t) (modificationTime / 1000) : info.st_mtime;
+        times.actime  = (time_t) (accessTime != 0       ? (accessTime / 1000)       : info.st_atime);
+        times.modtime = (time_t) (modificationTime != 0 ? (modificationTime / 1000) : info.st_mtime);
 
         return utime (fullPath.toUTF8(), &times) == 0;
     }
@@ -453,7 +461,7 @@ Result File::createDirectoryInternal (const String& fileName) const
 //==============================================================================
 int64 juce_fileSetPosition (void* handle, int64 pos)
 {
-    if (handle != 0 && lseek (getFD (handle), pos, SEEK_SET) == pos)
+    if (handle != 0 && lseek (getFD (handle), (off_t) pos, SEEK_SET) == pos)
         return pos;
 
     return -1;

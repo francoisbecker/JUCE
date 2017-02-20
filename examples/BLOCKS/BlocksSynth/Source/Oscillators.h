@@ -1,6 +1,4 @@
-
-#ifndef OSCILLATORS_H_INCLUDED
-#define OSCILLATORS_H_INCLUDED
+#pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
@@ -87,11 +85,11 @@ private:
     LinearSmoothedValue<double> amplitude, phaseIncrement;
 
     double frequency = 0;
-	double phasePos = 0.0f;
-	double sampleRate = 44100.0;
+    double phasePos = 0.0f;
+    double sampleRate = 44100.0;
 
     int initialNote = 0;
-	double maxFreq = 0, minFreq = 0;
+    double maxFreq = 0, minFreq = 0;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Oscillator)
@@ -224,5 +222,3 @@ struct TriangleVoice : public Oscillator
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TriangleVoice)
 };
-
-#endif  // OSCILLATORS_H_INCLUDED
