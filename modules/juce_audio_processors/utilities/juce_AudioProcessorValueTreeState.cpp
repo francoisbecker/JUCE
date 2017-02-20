@@ -180,15 +180,17 @@ AudioProcessorValueTreeState::AudioProcessorValueTreeState (AudioProcessor& p, U
 
 AudioProcessorValueTreeState::~AudioProcessorValueTreeState() {}
 
-AudioProcessorParameter* AudioProcessorValueTreeState::createAndAddParameter (const String& paramID, const String& paramName,
-                                                                              const String& labelText, NormalisableRange<float> r,
-                                                                              float defaultVal, std::function<String (float)> valueToTextFunction,
-                                                                              std::function<float (const String&)> textToValueFunction,
-                                                                              AudioProcessorParameter::RampCapability canRamp)
+AudioProcessorParameterWithID* AudioProcessorValueTreeState::createAndAddParameter (const String& paramID, const String& paramName,
+                                                                                    const String& labelText, NormalisableRange<float> r,
+                                                                                    float defaultVal, std::function<String (float)> valueToTextFunction,
+                                                                                    std::function<float (const String&)> textToValueFunction,
+                                                                                    AudioProcessorParameter::RampCapability canRamp)
 {
     // All parameters must be created before giving this manager a ValueTree state!
     jassert (! state.isValid());
+   #if ! JUCE_LINUX
     jassert (MessageManager::getInstance()->isThisTheMessageThread());
+   #endif
 
     Parameter* p = new Parameter (*this, paramID, paramName, labelText, r,
                                   defaultVal, valueToTextFunction, textToValueFunction, canRamp);
@@ -224,7 +226,7 @@ NormalisableRange<float> AudioProcessorValueTreeState::getParameterRange (String
     return NormalisableRange<float>();
 }
 
-AudioProcessorParameter* AudioProcessorValueTreeState::getParameter (StringRef paramID) const noexcept
+AudioProcessorParameterWithID* AudioProcessorValueTreeState::getParameter (StringRef paramID) const noexcept
 {
     return Parameter::getParameterForID (processor, paramID);
 }
