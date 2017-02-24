@@ -411,11 +411,9 @@ protected:
                        "A comma-separated list of custom Xcode setting flags which will be appended to the list of generated flags, "
                        "e.g. MACOSX_DEPLOYMENT_TARGET_i386 = 10.5, VALID_ARCHS = \"ppc i386 x86_64\"");
 
-            const char* cppLanguageStandardNames[] = { "Use Default", "C++98", "GNU++98", "C++11", "GNU++11", "C++14", "GNU++14", nullptr };
+            const char* cppLanguageStandardNames[] = { "Use Default", "C++11", "GNU++11", "C++14", "GNU++14", nullptr };
             Array<var> cppLanguageStandardValues;
             cppLanguageStandardValues.add (var());
-            cppLanguageStandardValues.add ("c++98");
-            cppLanguageStandardValues.add ("gnu++98");
             cppLanguageStandardValues.add ("c++11");
             cppLanguageStandardValues.add ("gnu++11");
             cppLanguageStandardValues.add ("c++14");
@@ -631,7 +629,7 @@ public:
 
         String getXCodeSchemeName() const
         {
-            return owner.projectName + " (" + getName() + ")";
+            return owner.projectName + " - " + getName();
         }
 
         String getID() const
@@ -667,7 +665,7 @@ public:
                 String productName (owner.replacePreprocessorTokens (*config, config->getTargetBinaryNameString()));
 
                 if (xcodeFileType == "archive.ar")
-                    productName = getLibbedFilename (productName);
+                    productName = getStaticLibbedFilename (productName);
                 else
                     productName += xcodeBundleExtension;
 
@@ -802,7 +800,7 @@ public:
             else if (arch == osxArch_64BitUniversal)   s.add ("ARCHS = \"$(ARCHS_STANDARD_32_64_BIT)\"");
             else if (arch == osxArch_64Bit)            s.add ("ARCHS = \"$(ARCHS_STANDARD_64_BIT)\"");
 
-            s.add ("HEADER_SEARCH_PATHS = " + owner.getHeaderSearchPaths (config));
+            s.add ("HEADER_SEARCH_PATHS = " + getHeaderSearchPaths (config));
             s.add ("GCC_OPTIMIZATION_LEVEL = " + config.getGCCOptimisationFlag());
 
             if (shouldCreatePList())
@@ -1014,7 +1012,7 @@ public:
             {
                 if (owner.getTargetOfType (Target::SharedCodeTarget) != nullptr)
                 {
-                    String productName (getLibbedFilename (owner.replacePreprocessorTokens (config, config.getTargetBinaryNameString())));
+                    String productName (getStaticLibbedFilename (owner.replacePreprocessorTokens (config, config.getTargetBinaryNameString())));
 
                     RelativePath sharedCodelib (productName, RelativePath::buildTargetFolder);
                     flags.add (getLinkerFlagForLib (sharedCodelib.getFileNameWithoutExtension()));
@@ -1188,6 +1186,29 @@ public:
             v.setProperty ("dstSubfolderSpec", (int) dst, nullptr);
         }
 
+        //==============================================================================
+        String getHeaderSearchPaths (const BuildConfiguration& config) const
+        {
+            StringArray paths (owner.extraSearchPaths);
+            paths.addArray (config.getHeaderSearchPaths());
+            paths.addArray (getTargetExtraHeaderSearchPaths());
+            paths.add ("$(inherited)");
+
+            paths = getCleanedStringArray (paths);
+
+            for (auto& s : paths)
+            {
+                s = owner.replacePreprocessorTokens (config, s);
+
+                if (s.containsChar (' '))
+                    s = "\"\\\"" + s + "\\\"\""; // crazy double quotes required when there are spaces..
+                else
+                    s = "\"" + s + "\"";
+            }
+
+            return "(" + paths.joinIntoString (", ") + ")";
+        }
+
     private:
         //==============================================================================
         void addExtraAudioUnitTargetSettings()
@@ -1276,6 +1297,54 @@ public:
 
             xcodeExtraLibrariesDebug.add   (aaxLibsFolder.getChildFile ("Debug/libAAXLibrary.a"));
             xcodeExtraLibrariesRelease.add (aaxLibsFolder.getChildFile ("Release/libAAXLibrary.a"));
+        }
+
+        StringArray getTargetExtraHeaderSearchPaths() const
+        {
+            StringArray targetExtraSearchPaths;
+
+            if (type == RTASPlugIn)
+            {
+                RelativePath rtasFolder (owner.getRTASPathValue().toString(), RelativePath::projectFolder);
+
+                targetExtraSearchPaths.add ("$(DEVELOPER_DIR)/Headers/FlatCarbon");
+                targetExtraSearchPaths.add ("$(SDKROOT)/Developer/Headers/FlatCarbon");
+
+                static const char* p[] = { "AlturaPorts/TDMPlugIns/PlugInLibrary/Controls",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/CoreClasses",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/DSPClasses",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/EffectClasses",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/MacBuild",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/Meters",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/ProcessClasses",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/ProcessClasses/Interfaces",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/RTASP_Adapt",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/Utilities",
+                    "AlturaPorts/TDMPlugIns/PlugInLibrary/ViewClasses",
+                    "AlturaPorts/TDMPlugIns/DSPManager/**",
+                    "AlturaPorts/TDMPlugIns/SupplementalPlugInLib/Encryption",
+                    "AlturaPorts/TDMPlugIns/SupplementalPlugInLib/GraphicsExtensions",
+                    "AlturaPorts/TDMPlugIns/common/**",
+                    "AlturaPorts/TDMPlugIns/common/PI_LibInterface",
+                    "AlturaPorts/TDMPlugIns/PACEProtection/**",
+                    "AlturaPorts/TDMPlugIns/SignalProcessing/**",
+                    "AlturaPorts/OMS/Headers",
+                    "AlturaPorts/Fic/Interfaces/**",
+                    "AlturaPorts/Fic/Source/SignalNets",
+                    "AlturaPorts/DSIPublicInterface/PublicHeaders",
+                    "DAEWin/Include",
+                    "AlturaPorts/DigiPublic/Interfaces",
+                    "AlturaPorts/DigiPublic",
+                    "AlturaPorts/NewFileLibs/DOA",
+                    "AlturaPorts/NewFileLibs/Cmn",
+                    "xplat/AVX/avx2/avx2sdk/inc",
+                    "xplat/AVX/avx2/avx2sdk/utils" };
+
+                for (auto* path : p)
+                    owner.addProjectPathToBuildPathList (targetExtraSearchPaths, rtasFolder.getChildFile (path));
+            }
+
+            return targetExtraSearchPaths;
         }
 
         void addExtraRTASTargetSettings()
@@ -1774,27 +1843,6 @@ private:
         }
     }
 
-    String getHeaderSearchPaths (const BuildConfiguration& config) const
-    {
-        StringArray paths (extraSearchPaths);
-        paths.addArray (config.getHeaderSearchPaths());
-        paths.add ("$(inherited)");
-
-        paths = getCleanedStringArray (paths);
-
-        for (auto& s : paths)
-        {
-            s = replacePreprocessorTokens (config, s);
-
-            if (s.containsChar (' '))
-                s = "\"\\\"" + s + "\\\"\""; // crazy double quotes required when there are spaces..
-            else
-                s = "\"" + s + "\"";
-        }
-
-        return "(" + paths.joinIntoString (", ") + ")";
-    }
-
     static String getLinkerFlagForLib (String library)
     {
         if (library.substring (0, 3) == "lib")
@@ -1824,7 +1872,7 @@ private:
     {
         StringArray s;
         s.add ("ALWAYS_SEARCH_USER_PATHS = NO");
-        s.add ("GCC_C_LANGUAGE_STANDARD = c99");
+        s.add ("GCC_C_LANGUAGE_STANDARD = c11");
         s.add ("GCC_WARN_ABOUT_RETURN_TYPE = YES");
         s.add ("GCC_WARN_CHECK_SWITCH_STATEMENTS = YES");
         s.add ("GCC_WARN_UNUSED_VARIABLE = YES");
@@ -2161,6 +2209,9 @@ private:
 
     String addProjectItem (const Project::Item& projectItem) const
     {
+        if (projectItem.getParent() == *modulesGroup)
+            return addFileReference (rebaseFromProjectFolderToBuildTarget (getModuleFolderRelativeToProject (projectItem.getName())).toUnixStyle());
+
         if (projectItem.isGroup())
         {
             StringArray childIDs;
@@ -2604,49 +2655,6 @@ private:
         vst3Path.referTo (Value (new DependencyPathValueSource (getSetting (Ids::vst3Folder), Ids::vst3Path, TargetOS::osx)));
         aaxPath. referTo (Value (new DependencyPathValueSource (getSetting (Ids::aaxFolder),  Ids::aaxPath,  TargetOS::osx)));
         rtasPath.referTo (Value (new DependencyPathValueSource (getSetting (Ids::rtasFolder), Ids::rtasPath, TargetOS::osx)));
-    }
-
-    void addRTASPluginSettings()
-    {
-        xcodeCanUseDwarf = false;
-
-        extraSearchPaths.add ("$(DEVELOPER_DIR)/Headers/FlatCarbon");
-        extraSearchPaths.add ("$(SDKROOT)/Developer/Headers/FlatCarbon");
-
-        static const char* p[] = { "AlturaPorts/TDMPlugIns/PlugInLibrary/Controls",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/CoreClasses",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/DSPClasses",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/EffectClasses",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/MacBuild",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/Meters",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/ProcessClasses",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/ProcessClasses/Interfaces",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/RTASP_Adapt",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/Utilities",
-                                   "AlturaPorts/TDMPlugIns/PlugInLibrary/ViewClasses",
-                                   "AlturaPorts/TDMPlugIns/DSPManager/**",
-                                   "AlturaPorts/TDMPlugIns/SupplementalPlugInLib/Encryption",
-                                   "AlturaPorts/TDMPlugIns/SupplementalPlugInLib/GraphicsExtensions",
-                                   "AlturaPorts/TDMPlugIns/common/**",
-                                   "AlturaPorts/TDMPlugIns/common/PI_LibInterface",
-                                   "AlturaPorts/TDMPlugIns/PACEProtection/**",
-                                   "AlturaPorts/TDMPlugIns/SignalProcessing/**",
-                                   "AlturaPorts/OMS/Headers",
-                                   "AlturaPorts/Fic/Interfaces/**",
-                                   "AlturaPorts/Fic/Source/SignalNets",
-                                   "AlturaPorts/DSIPublicInterface/PublicHeaders",
-                                   "DAEWin/Include",
-                                   "AlturaPorts/DigiPublic/Interfaces",
-                                   "AlturaPorts/DigiPublic",
-                                   "AlturaPorts/NewFileLibs/DOA",
-                                   "AlturaPorts/NewFileLibs/Cmn",
-                                   "xplat/AVX/avx2/avx2sdk/inc",
-                                   "xplat/AVX/avx2/avx2sdk/utils" };
-
-        RelativePath rtasFolder (getRTASPathValue().toString(), RelativePath::projectFolder);
-
-        for (auto* path : p)
-            addToExtraSearchPaths (rtasFolder.getChildFile (path));
     }
 
     JUCE_DECLARE_NON_COPYABLE (XCodeProjectExporter)

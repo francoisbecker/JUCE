@@ -513,6 +513,29 @@ public:
             return delayLoadedDLLs;
         }
 
+        String getModuleDefinitions (const MSVCBuildConfiguration& config) const
+        {
+            const String& moduleDefinitions = config.config [Ids::msvcModuleDefinitionFile].toString();
+
+            if (moduleDefinitions.isNotEmpty())
+                return moduleDefinitions;
+
+            if (type == RTASPlugIn)
+            {
+                const ProjectExporter& exp = getOwner();
+
+                RelativePath moduleDefPath
+                    = RelativePath (exp.getPathForModuleString ("juce_audio_plugin_client"), RelativePath::projectFolder)
+                         .getChildFile ("juce_audio_plugin_client").getChildFile ("RTAS").getChildFile ("juce_RTAS_WinExports.def");
+
+                return prependDot (moduleDefPath.rebased (exp.getProject().getProjectFolder(),
+                                                            exp.getTargetFolder(),
+                                                            RelativePath::buildTargetFolder).toWindowsStyle());
+            }
+
+            return String();
+        }
+
         bool shouldUseRuntimeDLL (const MSVCBuildConfiguration& config) const
         {
             return (config.config [Ids::useRuntimeLibDLL].isVoid() ? (getOwner().hasTarget (AAXPlugIn) || getOwner().hasTarget (RTASPlugIn))
@@ -654,7 +677,7 @@ protected:
         String filename = project.getProjectFilenameRoot();
 
         if (target.isNotEmpty())
-            filename += String (" (") + target + String (")");
+            filename += String (" - ") + target;
 
         return getTargetFolder().getChildFile (filename).withFileExtension (extension);
     }
@@ -741,8 +764,8 @@ protected:
         {
             if (MSVCTargetBase* target = targets[i])
             {
-                out << "Project(\"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}\") = \"" << projectName << " ("
-                    << target->getName() << ")\", \""
+                out << "Project(\"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}\") = \"" << projectName << " - "
+                    << target->getName() << "\", \""
                     << target->getVCProjFile().getFileName() << "\", \"" << target->getProjectGuid() << '"' << newLine;
 
                 if (sharedCodeGuid.isNotEmpty() && target->type != ProjectType::Target::SharedCodeTarget)
@@ -1324,9 +1347,10 @@ public:
                     if (delayLoadedDLLs.isNotEmpty())
                         link->createNewChildElement ("DelayLoadDLLs")->addTextElement (delayLoadedDLLs);
 
-                    if (config.config [Ids::msvcModuleDefinitionFile].toString().isNotEmpty())
+                    const String moduleDefinitionsFile (getModuleDefinitions (config));
+                    if (moduleDefinitionsFile.isNotEmpty())
                         link->createNewChildElement ("ModuleDefinitionFile")
-                            ->addTextElement (config.config [Ids::msvcModuleDefinitionFile].toString());
+                            ->addTextElement (moduleDefinitionsFile);
                 }
 
                 {
