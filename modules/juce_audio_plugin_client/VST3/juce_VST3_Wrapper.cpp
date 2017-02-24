@@ -924,7 +924,10 @@ private:
                 if (pluginEditor != nullptr)
                 {
                     addAndMakeVisible (pluginEditor);
-                    setBounds (pluginEditor->getLocalBounds());
+
+                    lastBounds = pluginEditor->getLocalBounds();
+                    setBounds (lastBounds);
+
                     resizeHostWindow();
                 }
 
@@ -945,15 +948,22 @@ private:
                 g.fillAll (Colours::black);
             }
 
-            void childBoundsChanged (Component*) override
+            void childBoundsChanged (Component* childComponent) override
             {
-                resizeHostWindow();
+                if (lastBounds != childComponent->getLocalBounds())
+                {
+                    lastBounds = childComponent->getLocalBounds();
+                    resizeHostWindow();
+                }
             }
 
             void resized() override
             {
                 if (pluginEditor != nullptr)
-                    pluginEditor->setBounds (getLocalBounds());
+                {
+                    lastBounds = getLocalBounds();
+                    pluginEditor->setBounds (lastBounds);
+                }
             }
 
             void resizeHostWindow()
@@ -991,6 +1001,7 @@ private:
         private:
             JuceVST3Editor& owner;
             FakeMouseMoveGenerator fakeMouseGenerator;
+            Rectangle<int> lastBounds;
 
             JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ContentWrapperComponent)
         };
