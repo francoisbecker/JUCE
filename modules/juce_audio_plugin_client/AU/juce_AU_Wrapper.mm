@@ -1120,9 +1120,9 @@ public:
 
         // set buffer pointers to minimize copying
         {
-            int chIdx = 0, numChannels;
-            bool interleaved;
-            AudioBufferList* buffer;
+            int chIdx = 0, numChannels = 0;
+            bool interleaved = false;
+            AudioBufferList* buffer = nullptr;
 
             // use output pointers
             for (int busIdx = 0; busIdx < numOutputBuses; ++busIdx)

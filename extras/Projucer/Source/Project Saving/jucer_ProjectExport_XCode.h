@@ -595,8 +595,6 @@ public:
                     xcodeBundleExtension = ".aaxplugin";
                     xcodeProductType = "com.apple.product-type.bundle";
                     xcodeCopyToProductInstallPathAfterBuild = true;
-
-                    addExtraAAXTargetSettings();
                     break;
 
                 case RTASPlugIn:
@@ -732,10 +730,14 @@ public:
                 attributes << "DevelopmentTeam = " << developmentTeamID << "; ";
 
             const int inAppPurchasesEnabled = (owner.iOS && owner.isInAppPurchasesEnabled()) ? 1 : 0;
+            const int interAppAudioEnabled  = (owner.iOS
+                                               && type == Target::StandalonePlugIn
+                                               && owner.getProject().shouldEnableIAA()) ? 1 : 0;
             const int sandboxEnabled = (type == Target::AudioUnitv3PlugIn ? 1 : 0);
 
             attributes << "SystemCapabilities = {";
             attributes << "com.apple.InAppPurchase = { enabled = " << inAppPurchasesEnabled << "; }; ";
+            attributes << "com.apple.InterAppAudio = { enabled = " << interAppAudioEnabled << "; }; ";
             attributes << "com.apple.Sandbox = { enabled = " << sandboxEnabled << "; }; ";
             attributes << "}; };";
 
@@ -863,23 +865,11 @@ public:
             }
             else
             {
-                const String sdk (config.osxSDKVersion.get());
-                const String sdkCompat (config.osxDeploymentTarget.get());
+                String sdkRoot;
+                s.add ("MACOSX_DEPLOYMENT_TARGET = " + getOSXDeploymentTarget(config, &sdkRoot));
 
-                // The AUv3 target always needs to be at least 10.11
-                int oldestAllowedDeploymentTarget = (type == Target::AudioUnitv3PlugIn ? minimumAUv3SDKVersion
-                                                                                       : oldestSDKVersion);
-
-                // if the user doesn't set it, then use the last known version that works well with JUCE
-                String deploymentTarget = "10.11";
-
-                for (int ver = oldestAllowedDeploymentTarget; ver <= currentSDKVersion; ++ver)
-                {
-                    if (sdk == getSDKName (ver))         s.add ("SDKROOT = macosx10." + String (ver));
-                    if (sdkCompat == getSDKName (ver))   deploymentTarget = "10." + String (ver);
-                }
-
-                s.add ("MACOSX_DEPLOYMENT_TARGET = " + deploymentTarget);
+                if (sdkRoot.isNotEmpty())
+                    s.add ("SDKROOT = " + sdkRoot);
 
                 s.add ("MACOSX_DEPLOYMENT_TARGET_ppc = 10.4");
                 s.add ("SDKROOT_ppc = macosx10.5");
@@ -953,8 +943,10 @@ public:
                 s.add ("SEPARATE_STRIP = YES");
             }
 
-            if (owner.project.getProjectType().isAudioPlugin() && type == Target::AudioUnitv3PlugIn &&  owner.isOSX())
-                s.add (String ("CODE_SIGN_ENTITLEMENTS = \"") + owner.getEntitlementsFileName() + String ("\""));
+            if (owner.project.getProjectType().isAudioPlugin())
+                if ((owner.isOSX() && type == Target::AudioUnitv3PlugIn)
+                    || (owner.isiOS() && type == Target::StandalonePlugIn))
+                    s.add (String ("CODE_SIGN_ENTITLEMENTS = \"") + owner.getEntitlementsFileName() + String ("\""));
 
             defines = mergePreprocessorDefs (defines, owner.getAllPreprocessorDefs (config, type));
 
@@ -999,8 +991,10 @@ public:
             if (getTargetFileType() == pluginBundle)
                 flags.add (owner.isiOS() ? "-bitcode_bundle" : "-bundle");
 
-            const Array<RelativePath>& extraLibs = config.isDebug() ? xcodeExtraLibrariesDebug
-                                                                    : xcodeExtraLibrariesRelease;
+            Array<RelativePath> extraLibs (config.isDebug() ? xcodeExtraLibrariesDebug
+                                                            : xcodeExtraLibrariesRelease);
+
+            addExtraLibsForTargetType (config, extraLibs);
 
             for (auto& lib : extraLibs)
             {
@@ -1112,14 +1106,36 @@ public:
             if (owner.settings ["UIStatusBarHidden"] && type != AudioUnitv3PlugIn)
                 addPlistDictionaryKeyBool (dict, "UIStatusBarHidden", true);
 
-            if (owner.iOS && type != AudioUnitv3PlugIn)
+            if (owner.iOS)
             {
-                // Forcing full screen disables the split screen feature and prevents error ITMS-90475
-                addPlistDictionaryKeyBool (dict, "UIRequiresFullScreen", true);
-                addPlistDictionaryKeyBool (dict, "UIStatusBarHidden", true);
+                if (type != AudioUnitv3PlugIn)
+                {
+                    // Forcing full screen disables the split screen feature and prevents error ITMS-90475
+                    addPlistDictionaryKeyBool (dict, "UIRequiresFullScreen", true);
+                    addPlistDictionaryKeyBool (dict, "UIStatusBarHidden", true);
 
-                addIosScreenOrientations (dict);
-                addIosBackgroundModes (dict);
+                    addIosScreenOrientations (dict);
+                    addIosBackgroundModes (dict);
+                }
+
+                if (type == StandalonePlugIn && owner.getProject().shouldEnableIAA())
+                {
+                    XmlElement audioComponentsPlistKey ("key");
+                    audioComponentsPlistKey.addTextElement ("AudioComponents");
+
+                    dict->addChildElement (new XmlElement (audioComponentsPlistKey));
+
+                    XmlElement audioComponentsPlistEntry ("array");
+                    XmlElement* audioComponentsDict = audioComponentsPlistEntry.createNewChildElement ("dict");
+
+                    addPlistDictionaryKey    (audioComponentsDict, "name",         owner.project.getIAAPluginName());
+                    addPlistDictionaryKey    (audioComponentsDict, "manufacturer", owner.project.getPluginManufacturerCode().toString().trim().substring (0, 4));
+                    addPlistDictionaryKey    (audioComponentsDict, "type",         owner.project.getIAATypeCode());
+                    addPlistDictionaryKey    (audioComponentsDict, "subtype",      owner.project.getPluginCode().toString().trim().substring (0, 4));
+                    addPlistDictionaryKeyInt (audioComponentsDict, "version",      owner.project.getVersionAsHexInteger());
+
+                    dict->addChildElement (new XmlElement (audioComponentsPlistEntry));
+                }
             }
 
             for (auto& e : xcodeExtraPListEntries)
@@ -1291,12 +1307,19 @@ public:
             xcodeExtraPListEntries.add (plistEntry);
         }
 
-        void addExtraAAXTargetSettings()
+        void addExtraLibsForTargetType  (const BuildConfiguration& config, Array<RelativePath>& extraLibs) const
         {
-            auto aaxLibsFolder = RelativePath (owner.getAAXPathValue().toString(), RelativePath::projectFolder).getChildFile ("Libs");
+            if (type == AAXPlugIn)
+            {
+                 auto aaxLibsFolder
+                    = RelativePath (owner.getAAXPathValue().toString(), RelativePath::projectFolder)
+                        .getChildFile ("Libs");
 
-            xcodeExtraLibrariesDebug.add   (aaxLibsFolder.getChildFile ("Debug/libAAXLibrary.a"));
-            xcodeExtraLibrariesRelease.add (aaxLibsFolder.getChildFile ("Release/libAAXLibrary.a"));
+                String libraryPath (config.isDebug() ? "Debug/libAAXLibrary" : "Release/libAAXLibrary");
+                libraryPath += (isUsingClangCppLibrary (config) ? "_libcpp.a" : ".a");
+
+                extraLibs.add   (aaxLibsFolder.getChildFile (libraryPath));
+            }
         }
 
         StringArray getTargetExtraHeaderSearchPaths() const
@@ -1353,6 +1376,45 @@ public:
 
             xcodeExtraLibrariesDebug.add   (rtasFolder.getChildFile ("MacBag/Libs/Debug/libPluginLibrary.a"));
             xcodeExtraLibrariesRelease.add (rtasFolder.getChildFile ("MacBag/Libs/Release/libPluginLibrary.a"));
+        }
+
+        bool isUsingClangCppLibrary (const BuildConfiguration& config) const
+        {
+            if (auto xcodeConfig = dynamic_cast<const XcodeBuildConfiguration*> (&config))
+            {
+                const String& configValue = xcodeConfig->cppStandardLibrary.get();
+
+                if (configValue.isNotEmpty())
+                    return (configValue == "libc++");
+
+                const int minorOSXDeploymentTarget
+                    = getOSXDeploymentTarget (*xcodeConfig).fromLastOccurrenceOf (".", false, false).getIntValue();
+
+                return (minorOSXDeploymentTarget > 8);
+            }
+
+            return false;
+        }
+
+        String getOSXDeploymentTarget (const XcodeBuildConfiguration& config, String* sdkRoot = nullptr) const
+        {
+            const String sdk (config.osxSDKVersion.get());
+            const String sdkCompat (config.osxDeploymentTarget.get());
+
+            // The AUv3 target always needs to be at least 10.11
+            int oldestAllowedDeploymentTarget = (type == Target::AudioUnitv3PlugIn ? minimumAUv3SDKVersion
+                                                 : oldestSDKVersion);
+
+            // if the user doesn't set it, then use the last known version that works well with JUCE
+            String deploymentTarget = "10.11";
+
+            for (int ver = oldestAllowedDeploymentTarget; ver <= currentSDKVersion; ++ver)
+            {
+                if (sdk == getSDKName (ver) && sdkRoot != nullptr) *sdkRoot = String ("macosx10." + String (ver));
+                if (sdkCompat == getSDKName (ver))   deploymentTarget = "10." + String (ver);
+            }
+
+            return deploymentTarget;
         }
 
         //==============================================================================
@@ -1500,8 +1562,9 @@ private:
 
     void addFilesAndGroupsToProject (StringArray& topLevelGroupIDs) const
     {
-        if (! isiOS() && project.getProjectType().isAudioPlugin())
-            topLevelGroupIDs.add (addEntitlementsFile());
+        StringArray entitlements = getEntitlements();
+        if (! entitlements.isEmpty())
+            topLevelGroupIDs.add (addEntitlementsFile (entitlements));
 
         for (auto& group : getAllGroups())
             if (group.getNumChildren() > 0)
@@ -2188,20 +2251,41 @@ private:
         return project.getProjectFilenameRoot() + String (".entitlements");
     }
 
-    String addEntitlementsFile() const
+    StringArray getEntitlements() const
     {
-        const char* sandboxEntitlement =
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
-            "<plist version=\"1.0\">"
-            "<dict>"
-            " <key>com.apple.security.app-sandbox</key>"
-            "  <true/>"
-            "</dict>"
-            "</plist>";
+        StringArray keys;
+        if (project.getProjectType().isAudioPlugin())
+        {
+            if (isiOS())
+            {
+                if (project.shouldEnableIAA())
+                    keys.add ("inter-app-audio");
+            }
+            else
+            {
+                keys.add ("com.apple.security.app-sandbox");
+            }
+        }
+        return keys;
+    }
+
+    String addEntitlementsFile (StringArray keys) const
+    {
+        String content =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+            "<plist version=\"1.0\">\n"
+            "<dict>\n";
+        for (auto& key : keys)
+        {
+            content += "\t<key>" + key + "</key>\n"
+                       "\t<true/>\n";
+        }
+        content += "</dict>\n"
+                   "</plist>\n";
 
         File entitlementsFile = getTargetFolder().getChildFile (getEntitlementsFileName());
-        overwriteFileIfDifferentOrThrow (entitlementsFile, sandboxEntitlement);
+        overwriteFileIfDifferentOrThrow (entitlementsFile, content);
 
         RelativePath plistPath (entitlementsFile, getTargetFolder(), RelativePath::buildTargetFolder);
         return addFile (plistPath, false, false, false, false, nullptr);
@@ -2209,9 +2293,6 @@ private:
 
     String addProjectItem (const Project::Item& projectItem) const
     {
-        if (projectItem.getParent() == *modulesGroup)
-            return addFileReference (rebaseFromProjectFolderToBuildTarget (getModuleFolderRelativeToProject (projectItem.getName())).toUnixStyle());
-
         if (projectItem.isGroup())
         {
             StringArray childIDs;
