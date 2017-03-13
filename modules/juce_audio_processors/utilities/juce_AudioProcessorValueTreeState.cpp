@@ -37,9 +37,9 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
         : AudioProcessorParameterWithID (parameterID, paramName, labelText),
           owner (s), valueToTextFunction (valueToText), textToValueFunction (textToValue),
           range (r), value (defaultVal), defaultValue (defaultVal),
-          listenersNeedCalling (true),
-          mCanRamp (canRamp)
+          listenersNeedCalling (true)
     {
+        setCanRamp(canRamp);
         state.addListener (this);
         needsUpdate.set (1);
     }
@@ -71,11 +71,6 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
             return (static_cast<int> ((range.end - range.start) / range.interval) + 1);
 
         return AudioProcessor::getDefaultNumParameterSteps();
-    }
-
-    RampCapability canRamp() const override
-    {
-        return mCanRamp;
     }
 
     void setValue (float newValue) override
@@ -160,7 +155,6 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
     float value, defaultValue;
     Atomic<int> needsUpdate;
     bool listenersNeedCalling;
-    RampCapability mCanRamp;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Parameter)
 };

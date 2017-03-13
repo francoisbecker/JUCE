@@ -1388,7 +1388,8 @@ void AudioProcessorParameter::endChangeGesture()
 bool AudioProcessorParameter::isOrientationInverted() const                    { return false; }
 bool AudioProcessorParameter::isAutomatable() const                            { return true; }
 bool AudioProcessorParameter::isMetaParameter() const                          { return false; }
-AudioProcessorParameter::RampCapability AudioProcessorParameter::canRamp() const { return oldRampCompatibility; }
+AudioProcessorParameter::RampCapability AudioProcessorParameter::canRamp() const { return mCanRamp; }
+void AudioProcessorParameter::setCanRamp(RampCapability pCanRamp) { mCanRamp = pCanRamp; }
 AudioProcessorParameter::Category AudioProcessorParameter::getCategory() const { return genericParameter; }
 int AudioProcessorParameter::getNumSteps() const            { return AudioProcessor::getDefaultNumParameterSteps(); }
 

@@ -168,7 +168,9 @@ public:
         For backward-compatibility with the previous AAX wrapper behaviour, by
         default this returns oldRampCompatibility.
     */
-    virtual RampCapability canRamp() const;
+    RampCapability canRamp() const;
+    
+    void setCanRamp(RampCapability pCanRamp);
 
     enum Category
     {
@@ -199,6 +201,7 @@ private:
     friend class AudioProcessor;
     AudioProcessor* processor;
     int parameterIndex;
+    RampCapability mCanRamp = RampCapability::oldRampCompatibility;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioProcessorParameter)
 };
