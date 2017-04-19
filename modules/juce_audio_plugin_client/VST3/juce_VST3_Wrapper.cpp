@@ -2289,12 +2289,12 @@ private:
        #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
         const int numParameters = 0;
         usingManagedParameter = true;
+        vstBypassParameterId = 0;
        #else
         const int numParameters = pluginInstance->getNumParameters();
         usingManagedParameter = (pluginInstance->getParameters().size() == numParameters);
-       #endif
-
         vstBypassParameterId = static_cast<Vst::ParamID> (usingManagedParameter ? JuceVST3EditController::paramBypass : numParameters);
+       #endif
 
         for (int i = 0; i < numParameters; ++i)
         {
