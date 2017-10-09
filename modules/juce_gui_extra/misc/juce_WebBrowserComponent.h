@@ -55,6 +55,8 @@ public:
 
     /** Destructor. */
     ~WebBrowserComponent();
+    
+    void displayHTML(const String& pHTML);
 
     //==============================================================================
     /** Sends the browser to a particular URL.
