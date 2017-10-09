@@ -45,6 +45,7 @@ StoredSettings::StoredSettings()
       projectDefaults ("PROJECT_DEFAULT_SETTINGS"),
       fallbackPaths ("FALLBACK_PATHS")
 {
+    recentFiles.setMaxNumberOfItems(25);
     updateOldProjectSettingsFiles();
     reload();
     projectDefaults.addListener (this);
