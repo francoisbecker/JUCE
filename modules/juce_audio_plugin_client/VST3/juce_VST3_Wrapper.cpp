@@ -439,6 +439,18 @@ public:
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProgramChangeParameter)
     };
+    
+    #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+    int getNumParametersIfNonPublished(AudioProcessor* pluginInstance)
+    {
+        return 1 // bypass parameter
+               + (pluginInstance->getNumPrograms() > 1 ? 1 : 0) // preset parameter
+        #if JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS
+               + 1 // midi parameter
+        #endif
+        ;
+    }
+    #endif
 
     //==============================================================================
     tresult PLUGIN_API setChannelContextInfos (Vst::IAttributeList* list) override
@@ -481,7 +493,11 @@ public:
         // Cubase and Nuendo need to inform the host of the current parameter values
         if (auto* pluginInstance = getPluginInstance())
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            auto numParameters = getNumParametersIfNonPublished(pluginInstance);
+           #else
             auto numParameters = pluginInstance->getNumParameters();
+           #endif
 
             for (int i = 0; i < numParameters; ++i)
                 setParamNormalized (getVSTParamIDForIndex (i), (double) pluginInstance->getParameter (i));
@@ -585,9 +601,12 @@ public:
 
     void audioProcessorParameterChanged (AudioProcessor*, int index, float newValue) override
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+       #else
         // NB: Cubase has problems if performEdit is called without setParamNormalized
         EditController::setParamNormalized (getVSTParamIDForIndex (index), (double) newValue);
         performEdit (getVSTParamIDForIndex (index), (double) newValue);
+       #endif
     }
 
     void audioProcessorChanged (AudioProcessor*) override
@@ -650,7 +669,11 @@ private:
 
             if (parameters.getParameterCount() <= 0)
             {
+               #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+                auto numParameters = 0;
+               #else
                 auto numParameters = pluginInstance->getNumParameters();
+               #endif
 
               #if ! JUCE_FORCE_USE_LEGACY_PARAM_IDS
                 usingManagedParameter = (pluginInstance->getParameters().size() == numParameters);
@@ -724,7 +747,11 @@ private:
     {
         jassert (pluginFilter != nullptr);
 
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int n = 0;
+       #else
         const int n = pluginFilter->getNumParameters();
+       #endif
         const bool managedParameter = (pluginFilter->getParameters().size() == n);
 
         if (isPositiveAndBelow (paramIndex, n))
@@ -1129,7 +1156,11 @@ public:
         processSetup.symbolicSampleSize = Vst::kSample32;
 
        #if JUCE_FORCE_USE_LEGACY_PARAM_IDS
+        #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        vstBypassParameterId = static_cast<Vst::ParamID> (0);
+        #else
         vstBypassParameterId = static_cast<Vst::ParamID> (pluginInstance->getNumParameters());
+        #endif
        #else
         cacheParameterIDs();
        #endif
@@ -1995,7 +2026,11 @@ public:
                     {
                         auto index = getJuceIndexForVSTParamID (vstParamID);
 
+                       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+                        if (isPositiveAndBelow (index, 0))
+                       #else
                         if (isPositiveAndBelow (index, pluginInstance->getNumParameters()))
+                       #endif
                             pluginInstance->setParameter (index, static_cast<float> (value));
                     }
                 }
@@ -2334,10 +2369,15 @@ private:
    #else
     void cacheParameterIDs()
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int numParameters = 0;
+        usingManagedParameter = true;
+        vstBypassParameterId = 0;
+       #else
         const int numParameters = pluginInstance->getNumParameters();
         usingManagedParameter = (pluginInstance->getParameters().size() == numParameters);
-
         vstBypassParameterId = static_cast<Vst::ParamID> (usingManagedParameter ? JuceVST3EditController::paramBypass : numParameters);
+       #endif
 
         for (int i = 0; i < numParameters; ++i)
         {
