@@ -383,9 +383,9 @@ public:
                 setValue (currentValue.getValue(), dontSendNotification);
         }
         else if (value.refersToSameSourceAs (valueMin))
-            setMinValue (valueMin.getValue(), dontSendNotification, allowNudgingOfOtherValues);
+            setMinValue (valueMin.getValue(), dontSendNotification, nudgingOfOtherValuesAllowed);
         else if (value.refersToSameSourceAs (valueMax))
-            setMaxValue (valueMax.getValue(), dontSendNotification, allowNudgingOfOtherValues);
+            setMaxValue (valueMax.getValue(), dontSendNotification, nudgingOfOtherValuesAllowed);
     }
 
     void labelTextChanged (Label* label) override
@@ -900,7 +900,7 @@ public:
             else if (sliderBeingDragged == 1)
             {
                 setMinValue (owner.snapValue (valueWhenLastDragged, dragMode),
-                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, allowNudgingOfOtherValues);
+                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, nudgingOfOtherValuesAllowed);
 
                 if (e.mods.isShiftDown())
                     setMaxValue (getMinValue() + minMaxDiff, dontSendNotification, true);
@@ -910,7 +910,7 @@ public:
             else if (sliderBeingDragged == 2)
             {
                 setMaxValue (owner.snapValue (valueWhenLastDragged, dragMode),
-                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, allowNudgingOfOtherValues);
+                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, nudgingOfOtherValuesAllowed);
 
                 if (e.mods.isShiftDown())
                     setMinValue (getMaxValue() - minMaxDiff, dontSendNotification, true);
@@ -1238,7 +1238,7 @@ public:
     Time lastMouseWheelTime;
     Rectangle<int> sliderRect;
     ScopedPointer<DragInProgress> currentDrag;
-    bool allowNudgingOfOtherValues = true;
+    bool nudgingOfOtherValuesAllowed = true;
 
     TextEntryBoxPosition textBoxPos;
     String textSuffix;
@@ -1502,7 +1502,7 @@ void Slider::setMinAndMaxValues (double newMinValue, double newMaxValue, const N
 
 void Slider::allowNudgingOfOtherValues(bool allow)
 {
-    pimpl->allowNudgingOfOtherValues = allow;
+    pimpl->nudgingOfOtherValuesAllowed = allow;
 }
 
 void Slider::setDoubleClickReturnValue (bool isDoubleClickEnabled,  double valueToSetOnDoubleClick)
