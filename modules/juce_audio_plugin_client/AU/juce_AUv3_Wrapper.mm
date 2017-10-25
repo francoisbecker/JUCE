@@ -863,7 +863,11 @@ public:
 
     void audioProcessorParameterChanged (AudioProcessor*, int idx, float newValue) override
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        if (isPositiveAndBelow (idx, 0))
+       #else
         if (isPositiveAndBelow (idx, getAudioProcessor().getNumParameters()))
+       #endif
         {
             if (AUParameter* param = [paramTree parameterWithAddress: getAUParameterAddressForIndex (idx)])
             {
@@ -1084,7 +1088,11 @@ private:
         overviewParams = [[NSMutableArray<NSNumber*> alloc] init];
 
         auto& processor = getAudioProcessor();
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int n = 0;
+       #else
         const int n = processor.getNumParameters();
+       #endif
 
        #if ! JUCE_FORCE_USE_LEGACY_PARAM_IDS
         // check if all parameters are managed?
@@ -1235,7 +1243,11 @@ private:
         jassert (static_cast<int> (frameCount) <= getAudioProcessor().getBlockSize());
 
         // process params
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int numParams = 0;
+       #else
         const int numParams = processor.getNumParameters();
+       #endif
         processEvents (realtimeEventListHead, numParams, static_cast<AUEventSampleTime> (timestamp->mSampleTime));
 
         if (lastTimeStamp.mSampleTime != timestamp->mSampleTime)
@@ -1366,7 +1378,11 @@ private:
             const int idx = getJuceParameterIndexForAUAddress ([param address]);
             auto& processor = getAudioProcessor();
 
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            if (isPositiveAndBelow (idx, 0))
+           #else
             if (isPositiveAndBelow (idx, processor.getNumParameters()))
+           #endif
                 processor.setParameter (idx, value);
         }
     }
@@ -1378,7 +1394,11 @@ private:
             const int idx = getJuceParameterIndexForAUAddress ([param address]);
             auto& processor = getAudioProcessor();
 
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            if (isPositiveAndBelow (idx, 0))
+           #else
             if (isPositiveAndBelow (idx, processor.getNumParameters()))
+           #endif
                 return processor.getParameter (idx);
         }
 
@@ -1398,7 +1418,11 @@ private:
     AUParameterAddress generateAUParameterAddressForIndex (int paramIndex) const
     {
         auto& processor = getAudioProcessor();
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int n = 0;
+       #else
         const int n = processor.getNumParameters();
+       #endif
 
         if (isPositiveAndBelow (paramIndex, n))
         {

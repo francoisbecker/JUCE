@@ -287,7 +287,11 @@ public:
         vstEffect.setParameterValueFunction = setParameterCB;
         vstEffect.getParameterValueFunction = getParameterCB;
         vstEffect.numPrograms = jmax (1, af->getNumPrograms());
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        vstEffect.numParameters = 0;
+       #else
         vstEffect.numParameters = af->getNumParameters();
+       #endif
         vstEffect.numInputChannels = maxNumInChannels;
         vstEffect.numOutputChannels = maxNumOutChannels;
         vstEffect.latency = processor->getLatencySamples();
@@ -708,7 +712,11 @@ public:
         if (processor == nullptr)
             return 0.0f;
 
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        jassert (isPositiveAndBelow (index, 0));
+       #else
         jassert (isPositiveAndBelow (index, processor->getNumParameters()));
+       #endif
         return processor->getParameter (index);
     }
 
@@ -721,7 +729,11 @@ public:
     {
         if (processor != nullptr)
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            jassert (isPositiveAndBelow (index, 0));
+           #else
             jassert (isPositiveAndBelow (index, processor->getNumParameters()));
+           #endif
             processor->setParameter (index, value);
         }
     }
@@ -1647,7 +1659,11 @@ private:
     {
         if (processor != nullptr)
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            jassert (isPositiveAndBelow (args.index, 0));
+           #else
             jassert (isPositiveAndBelow (args.index, processor->getNumParameters()));
+           #endif
             // length should technically be kVstMaxParamStrLen, which is 8, but hosts will normally allow a bit more.
             processor->getParameterLabel (args.index).copyToUTF8 ((char*) args.ptr, 24 + 1);
         }
@@ -1659,7 +1675,11 @@ private:
     {
         if (processor != nullptr)
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            jassert (isPositiveAndBelow (args.index, 0));
+           #else
             jassert (isPositiveAndBelow (args.index, processor->getNumParameters()));
+           #endif
             // length should technically be kVstMaxParamStrLen, which is 8, but hosts will normally allow a bit more.
             processor->getParameterText (args.index, 24).copyToUTF8 ((char*) args.ptr, 24 + 1);
         }
@@ -1671,7 +1691,11 @@ private:
     {
         if (processor != nullptr)
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            jassert (isPositiveAndBelow (args.index, 0));
+           #else
             jassert (isPositiveAndBelow (args.index, processor->getNumParameters()));
+           #endif
             // length should technically be kVstMaxParamStrLen, which is 8, but hosts will normally allow a bit more.
             processor->getParameterName (args.index, 32).copyToUTF8 ((char*) args.ptr, 32 + 1);
         }
@@ -1815,7 +1839,11 @@ private:
     {
         if (processor != nullptr)
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            jassert (isPositiveAndBelow (args.index, 0));
+           #else
             jassert (isPositiveAndBelow (args.index, processor->getNumParameters()));
+           #endif
 
             if (auto* p = processor->getParameters()[args.index])
             {

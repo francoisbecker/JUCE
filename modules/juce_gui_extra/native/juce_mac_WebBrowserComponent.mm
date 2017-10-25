@@ -268,6 +268,11 @@ public:
 
         setView (nil);
     }
+    
+    void displayHTML (const String& pHTML)
+    {
+        [[webView mainFrame] loadHTMLString:juceStringToNS(pHTML) baseURL:nil];
+    }
 
     void goToURL (const String& url,
                   const StringArray* headers,
@@ -370,6 +375,12 @@ WebBrowserComponent::WebBrowserComponent (const bool unloadWhenHidden)
 WebBrowserComponent::~WebBrowserComponent()
 {
     deleteAndZero (browser);
+}
+
+//==============================================================================
+void WebBrowserComponent::displayHTML(const String& pHTML)
+{
+    browser->displayHTML(pHTML);
 }
 
 //==============================================================================
