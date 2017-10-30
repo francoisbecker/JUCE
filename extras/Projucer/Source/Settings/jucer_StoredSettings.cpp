@@ -227,6 +227,9 @@ void StoredSettings::saveSwatchColours()
         props.setValue ("swatchColour" + String (i), swatchColours.getReference(i).toString());
 }
 
+StoredSettings::ColourSelectorWithSwatches::ColourSelectorWithSwatches() {}
+StoredSettings::ColourSelectorWithSwatches::~ColourSelectorWithSwatches() {}
+
 int StoredSettings::ColourSelectorWithSwatches::getNumSwatches() const
 {
     return getAppSettings().swatchColours.size();
