@@ -295,6 +295,10 @@ public:
                    "Enable this to make Xcode search all the projects folders for include files. This means you can be lazy "
                    "and not bother using relative paths to include your headers, but it means your code won't be "
                    "compatible with other build systems");
+        
+        props.add (new BooleanPropertyComponent (getSetting ("clangWarnSuspiciousImplicitConversion"), "CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION", "Enabled"),
+                   "Enable this to make the Xcode compiler Clang warn on suspicious implicit conversions. These warnings are "
+                   "standard with other compilers like Visual Studio; activating this eases the code portability");
     }
 
     bool launchProject() override
@@ -956,6 +960,7 @@ public:
 
             s.set ("HEADER_SEARCH_PATHS", String ("(") + getHeaderSearchPaths (config).joinIntoString (", ") + ", \"$(inherited)\")");
             s.set ("USE_HEADERMAP", String (static_cast<bool> (config.exporter.settings.getProperty ("useHeaderMap")) ? "YES" : "NO"));
+            s.set ("CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION", String (static_cast<bool> (config.exporter.settings.getProperty ("clangWarnSuspiciousImplicitConversion")) ? "YES" : "NO"));
 
             s.set ("GCC_OPTIMIZATION_LEVEL", config.getGCCOptimisationFlag());
 
