@@ -1173,8 +1173,6 @@ public:
 
         err = MusicDeviceBase::ChangeStreamFormat (scope, element, old, format);
 
-        DBG (set.getDescription());
-
         if (err == noErr)
             currentTag = CoreAudioLayouts::toCoreAudio (set);
 
