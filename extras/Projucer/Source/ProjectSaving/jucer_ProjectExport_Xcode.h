@@ -1369,9 +1369,9 @@ public:
                     XmlElement* audioComponentsDict = audioComponentsPlistEntry.createNewChildElement ("dict");
 
                     addPlistDictionaryKey    (audioComponentsDict, "name",         owner.project.getIAAPluginName());
-                    addPlistDictionaryKey    (audioComponentsDict, "manufacturer", owner.project.getPluginManufacturerCodeString().trim().substring (0, 4));
+                    addPlistDictionaryKey    (audioComponentsDict, "manufacturer", owner.project.getPluginManufacturerCodeString().substring (0, 4));
                     addPlistDictionaryKey    (audioComponentsDict, "type",         owner.project.getIAATypeCode());
-                    addPlistDictionaryKey    (audioComponentsDict, "subtype",      owner.project.getPluginCodeString().trim().substring (0, 4));
+                    addPlistDictionaryKey    (audioComponentsDict, "subtype",      owner.project.getPluginCodeString().substring (0, 4));
                     addPlistDictionaryKeyInt (audioComponentsDict, "version",      owner.project.getVersionAsHexInteger());
 
                     dict->addChildElement (new XmlElement (audioComponentsPlistEntry));
@@ -1495,8 +1495,8 @@ public:
             XmlElement plistEntry ("array");
             XmlElement* dict = plistEntry.createNewChildElement ("dict");
 
-            auto pluginManufacturerCode = owner.project.getPluginManufacturerCodeString().trim().substring (0, 4);
-            auto pluginSubType          = owner.project.getPluginCodeString().trim().substring (0, 4);
+            auto pluginManufacturerCode = owner.project.getPluginManufacturerCodeString().substring (0, 4);
+            auto pluginSubType          = owner.project.getPluginCodeString().substring (0, 4);
 
             if (pluginManufacturerCode.toLowerCase() == pluginManufacturerCode)
             {
@@ -1545,9 +1545,9 @@ public:
                                                             + ": " + owner.project.getPluginNameString());
             addPlistDictionaryKey (componentDict, "description", owner.project.getPluginDescriptionString());
             addPlistDictionaryKey (componentDict, "factoryFunction",owner.project. getPluginAUExportPrefixString() + "FactoryAUv3");
-            addPlistDictionaryKey (componentDict, "manufacturer", owner.project.getPluginManufacturerCodeString().trim().substring (0, 4));
+            addPlistDictionaryKey (componentDict, "manufacturer", owner.project.getPluginManufacturerCodeString().substring (0, 4));
             addPlistDictionaryKey (componentDict, "type", owner.project.getAUMainTypeCode());
-            addPlistDictionaryKey (componentDict, "subtype", owner.project.getPluginCodeString().trim().substring (0, 4));
+            addPlistDictionaryKey (componentDict, "subtype", owner.project.getPluginCodeString().substring (0, 4));
             addPlistDictionaryKeyInt (componentDict, "version", owner.project.getVersionAsHexInteger());
             addPlistDictionaryKeyBool (componentDict, "sandboxSafe", true);
 
@@ -1680,7 +1680,7 @@ public:
         //==============================================================================
         const XcodeProjectExporter& owner;
 
-        Target& operator= (const Target&) JUCE_DELETED_FUNCTION;
+        Target& operator= (const Target&) = delete;
     };
 
     mutable StringArray xcodeFrameworks;

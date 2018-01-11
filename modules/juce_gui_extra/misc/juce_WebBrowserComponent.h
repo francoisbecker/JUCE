@@ -139,7 +139,7 @@ private:
     //==============================================================================
     class Pimpl;
     ScopedPointer<Pimpl> browser;
-    bool blankPageShown, unloadPageWhenBrowserIsHidden;
+    bool blankPageShown = false, unloadPageWhenBrowserIsHidden;
     String lastURL;
     StringArray lastHeaders;
     MemoryBlock lastPostData;
