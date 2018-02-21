@@ -1966,6 +1966,7 @@ public:
         getPluginInstance().setProcessingPrecision (newSetup.symbolicSampleSize == Vst::kSample64
                                                         ? AudioProcessor::doublePrecision
                                                         : AudioProcessor::singlePrecision);
+        getPluginInstance().setNonRealtime (newSetup.processMode == Vst::kOffline);
 
         preparePlugin (processSetup.sampleRate, processSetup.maxSamplesPerBlock);
 
