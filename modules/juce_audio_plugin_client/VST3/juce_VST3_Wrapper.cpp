@@ -246,7 +246,19 @@ public:
                 // otherwise we get parallel streams of parameter value updates
                 // during playback
                 if (owner.vst3IsPlaying.get() == 0)
-                    owner.setParameter (paramIndex, static_cast<float> (v));
+                {
+                    auto value = static_cast<float> (v);
+
+                    if (auto* param = owner.getParameters()[paramIndex])
+                    {
+                        param->setValue (value);
+                        param->sendValueChangedMessageToListeners (value);
+                    }
+                    else
+                    {
+                        owner.setParameter (paramIndex, value);
+                    }
+                }
 
                 changed();
                 return true;
@@ -1035,6 +1047,22 @@ private:
                     {
                         lastBounds = getLocalBounds();
                         isResizingChildToFitParent = true;
+
+                        if (auto* constrainer = pluginEditor->getConstrainer())
+                        {
+                            auto aspectRatio = constrainer->getFixedAspectRatio();
+                            auto width = (double) lastBounds.getWidth();
+                            auto height = (double) lastBounds.getHeight();
+
+                            if (aspectRatio != 0)
+                            {
+                                if (width / height > aspectRatio)
+                                    setBounds ({ 0, 0, roundToInt (height * aspectRatio), lastBounds.getHeight() });
+                                else
+                                    setBounds ({ 0, 0, lastBounds.getWidth(), roundToInt (width / aspectRatio) });
+                            }
+                        }
+
                         pluginEditor->setTopLeftPosition (0, 0);
                         pluginEditor->setBounds (pluginEditor->getLocalArea (this, getLocalBounds()));
                         isResizingChildToFitParent = false;
@@ -2028,14 +2056,21 @@ public:
                     }
                     else
                     {
-                        auto index = getJuceIndexForVSTParamID (vstParamID);
-
                        #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
-                        if (isPositiveAndBelow (index, 0))
                        #else
-                        if (isPositiveAndBelow (index, pluginInstance->getNumParameters()))
+                        auto index = getJuceIndexForVSTParamID (vstParamID);
+                        auto floatValue = static_cast<float> (value);
+
+                        if (auto* param = pluginInstance->getParameters()[index])
+                        {
+                            param->setValue (floatValue);
+                            param->sendValueChangedMessageToListeners (floatValue);
+                        }
+                        else if (isPositiveAndBelow (index, pluginInstance->getNumParameters()))
+                        {
+                            pluginInstance->setParameter (index, floatValue);
+                        }
                        #endif
-                            pluginInstance->setParameter (index, static_cast<float> (value));
                     }
                 }
             }
@@ -2386,6 +2421,7 @@ private:
        #else
         const int numParameters = pluginInstance->getNumParameters();
         usingManagedParameter = (pluginInstance->getParameters().size() == numParameters);
+
         vstBypassParameterId = static_cast<Vst::ParamID> (usingManagedParameter ? JuceVST3EditController::paramBypass : numParameters);
        #endif
 

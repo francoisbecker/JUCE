@@ -729,11 +729,18 @@ public:
         if (processor != nullptr)
         {
            #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
-            jassert (isPositiveAndBelow (index, 0));
            #else
-            jassert (isPositiveAndBelow (index, processor->getNumParameters()));
+            if (auto* param = processor->getParameters()[index])
+            {
+                param->setValue (value);
+                param->sendValueChangedMessageToListeners (value);
+            }
+            else
+            {
+                jassert (isPositiveAndBelow (index, processor->getNumParameters()));
+                processor->setParameter (index, value);
+            }
            #endif
-            processor->setParameter (index, value);
         }
     }
 
@@ -1844,9 +1851,12 @@ private:
             jassert (isPositiveAndBelow (args.index, processor->getNumParameters()));
            #endif
 
-            if (auto* p = processor->getParameters()[args.index])
+            if (auto* param = processor->getParameters()[args.index])
             {
-                processor->setParameter (args.index, p->getValueForText (String::fromUTF8 ((char*) args.ptr)));
+                auto value = param->getValueForText (String::fromUTF8 ((char*) args.ptr));
+                param->setValue (value);
+                param->sendValueChangedMessageToListeners (value);
+
                 return 1;
             }
         }
