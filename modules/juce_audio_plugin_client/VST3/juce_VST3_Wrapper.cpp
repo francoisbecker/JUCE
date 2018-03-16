@@ -112,6 +112,8 @@ private:
 
 class JuceVST3Component;
 
+static ThreadLocalValue<bool> inParameterChangedCallback;
+
 //==============================================================================
 class JuceVST3EditController : public Vst::EditController,
                                public Vst::IMidiMapping,
@@ -252,6 +254,8 @@ public:
                     if (auto* param = owner.getParameters()[paramIndex])
                     {
                         param->setValue (value);
+
+                        inParameterChangedCallback = true;
                         param->sendValueChangedMessageToListeners (value);
                     }
                     else
@@ -620,6 +624,12 @@ public:
     {
        #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
        #else
+        if (inParameterChangedCallback.get())
+        {
+            inParameterChangedCallback = false;
+            return;
+        }
+
         // NB: Cubase has problems if performEdit is called without setParamNormalized
         EditController::setParamNormalized (getVSTParamIDForIndex (index), (double) newValue);
         performEdit (getVSTParamIDForIndex (index), (double) newValue);
@@ -1164,6 +1174,8 @@ public:
       : pluginInstance (createPluginFilterOfType (AudioProcessor::wrapperType_VST3)),
         host (h)
     {
+        inParameterChangedCallback = false;
+
        #ifdef JucePlugin_PreferredChannelConfigurations
         short configs[][2] = { JucePlugin_PreferredChannelConfigurations };
         const int numConfigs = sizeof (configs) / sizeof (short[2]);
@@ -2064,6 +2076,8 @@ public:
                         if (auto* param = pluginInstance->getParameters()[index])
                         {
                             param->setValue (floatValue);
+
+                            inParameterChangedCallback = true;
                             param->sendValueChangedMessageToListeners (floatValue);
                         }
                         else if (isPositiveAndBelow (index, pluginInstance->getNumParameters()))
