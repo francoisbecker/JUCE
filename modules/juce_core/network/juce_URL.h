@@ -284,7 +284,7 @@ public:
         It allows your app to receive progress updates during a lengthy POST operation. If you
         want to continue the operation, this should return true, or false to abort.
     */
-    typedef bool (OpenStreamProgressCallback) (void* context, int bytesSent, int totalBytes);
+    using OpenStreamProgressCallback = bool (void* context, int bytesSent, int totalBytes);
 
     /** Attempts to open a stream that can read from this URL.
 
@@ -532,7 +532,7 @@ private:
         Upload (const String&, const String&, const String&, const File&, MemoryBlock*);
         String parameterName, filename, mimeType;
         File file;
-        ScopedPointer<MemoryBlock> data;
+        std::unique_ptr<MemoryBlock> data;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Upload)
     };
