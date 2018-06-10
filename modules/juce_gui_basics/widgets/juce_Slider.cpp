@@ -395,9 +395,9 @@ public:
                 setValue (currentValue.getValue(), dontSendNotification);
         }
         else if (value.refersToSameSourceAs (valueMin))
-            setMinValue (valueMin.getValue(), dontSendNotification, true);
+            setMinValue (valueMin.getValue(), dontSendNotification, nudgingOfOtherValuesAllowed);
         else if (value.refersToSameSourceAs (valueMax))
-            setMaxValue (valueMax.getValue(), dontSendNotification, true);
+            setMaxValue (valueMax.getValue(), dontSendNotification, nudgingOfOtherValuesAllowed);
     }
 
     void textChanged()
@@ -902,7 +902,7 @@ public:
             else if (sliderBeingDragged == 1)
             {
                 setMinValue (owner.snapValue (valueWhenLastDragged, dragMode),
-                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, true);
+                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, nudgingOfOtherValuesAllowed);
 
                 if (e.mods.isShiftDown())
                     setMaxValue (getMinValue() + minMaxDiff, dontSendNotification, true);
@@ -912,7 +912,7 @@ public:
             else if (sliderBeingDragged == 2)
             {
                 setMaxValue (owner.snapValue (valueWhenLastDragged, dragMode),
-                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, true);
+                             sendChangeOnlyOnRelease ? dontSendNotification : sendNotificationAsync, nudgingOfOtherValuesAllowed);
 
                 if (e.mods.isShiftDown())
                     setMinValue (getMaxValue() - minMaxDiff, dontSendNotification, true);
@@ -1245,6 +1245,7 @@ public:
     Time lastMouseWheelTime;
     Rectangle<int> sliderRect;
     std::unique_ptr<DragInProgress> currentDrag;
+    bool nudgingOfOtherValuesAllowed = true;
 
     TextEntryBoxPosition textBoxPos;
     String textSuffix;
@@ -1533,6 +1534,11 @@ void Slider::setMaxValue (double newValue, NotificationType notification, bool a
 void Slider::setMinAndMaxValues (double newMinValue, double newMaxValue, NotificationType notification)
 {
     pimpl->setMinAndMaxValues (newMinValue, newMaxValue, notification);
+}
+
+void Slider::allowNudgingOfOtherValues(bool allow)
+{
+    pimpl->nudgingOfOtherValuesAllowed = allow;
 }
 
 void Slider::setDoubleClickReturnValue (bool isDoubleClickEnabled,  double valueToSetOnDoubleClick)
