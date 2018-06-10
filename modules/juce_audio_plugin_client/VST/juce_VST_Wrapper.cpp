@@ -295,7 +295,11 @@ public:
         vstEffect.setParameterValueFunction = setParameterCB;
         vstEffect.getParameterValueFunction = getParameterCB;
         vstEffect.numPrograms = jmax (1, af->getNumPrograms());
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        vstEffect.numParameters = 0;
+       #else
         vstEffect.numParameters = juceParameters.getNumParameters();
+       #endif
         vstEffect.numInputChannels = maxNumInChannels;
         vstEffect.numOutputChannels = maxNumOutChannels;
         vstEffect.latency = processor->getLatencySamples();
@@ -716,6 +720,10 @@ public:
     //==============================================================================
     float getParameter (int32 index) const
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        return 0.0;
+       #endif
+       
         if (auto* param = juceParameters.getParamForIndex (index))
             return param->getValue();
 
@@ -731,10 +739,13 @@ public:
     {
         if (auto* param = juceParameters.getParamForIndex (index))
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+           #else
             param->setValue (value);
 
             inParameterChangedCallback = true;
             param->sendValueChangedMessageToListeners (value);
+           #endif
         }
     }
 

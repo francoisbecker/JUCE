@@ -742,7 +742,11 @@ namespace AAXClasses
             // * The preset is loaded in PT 10 using the AAX version.
             // * The session is then saved, and closed.
             // * The saved session is loaded, but acting as if the preset was never loaded.
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            auto numParameters = 0;
+           #else
             auto numParameters = juceParameters.getNumParameters();
+           #endif
 
             for (int i = 0; i < numParameters; ++i)
                 if (auto paramID = getAAXParamIDFromJuceIndex(i))
@@ -866,6 +870,10 @@ namespace AAXClasses
 
         AAX_Result SetParameterNormalizedValue (AAX_CParamID paramID, double newValue) override
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            return AAX_SUCCESS;
+           #endif
+           
             if (auto* p = mParameterManager.GetParameterByID (paramID))
                 p->SetValueWithFloat ((float) newValue);
 
@@ -1407,6 +1415,9 @@ namespace AAXClasses
 
         void addAudioProcessorParameters()
         {
+           #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+            return;
+           #endif
             auto& audioProcessor = getPluginInstance();
 
            #if JUCE_FORCE_USE_LEGACY_PARAM_IDS

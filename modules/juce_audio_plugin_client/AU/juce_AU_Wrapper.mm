@@ -851,6 +851,9 @@ public:
                                       AudioUnitParameterID inParameterID,
                                       AudioUnitParameterInfo& outParameterInfo) override
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        return kAudioUnitErr_InvalidParameter;
+       #endif
         if (inScope == kAudioUnitScope_Global && juceFilter != nullptr)
         {
             if (auto* param = getParameterForAUParameterID (inParameterID))
@@ -1840,6 +1843,11 @@ private:
     void addParameters()
     {
         juceParameters.update (*juceFilter, forceUseLegacyParamIDs);
+        
+        // check if all parameters are managed?
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        return;
+       #endif
         const int numParams = juceParameters.getNumParameters();
 
         if (forceUseLegacyParamIDs)

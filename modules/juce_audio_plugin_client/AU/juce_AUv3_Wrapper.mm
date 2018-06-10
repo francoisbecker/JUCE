@@ -933,7 +933,11 @@ public:
             return;
         }
 
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        if (isPositiveAndBelow (idx, 0))
+       #else
         if (isPositiveAndBelow (idx, juceParameters.getNumParameters()))
+       #endif
         {
             if (AUParameter* param = [paramTree.get() parameterWithAddress: getAUParameterAddressForIndex (idx)])
             {
@@ -1157,6 +1161,10 @@ private:
 
     void addParameters()
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        return;
+       #endif
+       
         std::unique_ptr<NSMutableArray<AUParameterNode*>, NSObjectDeleter> params ([[NSMutableArray<AUParameterNode*> alloc] init]);
 
         overviewParams.reset ([[NSMutableArray<NSNumber*> alloc] init]);
@@ -1360,7 +1368,11 @@ private:
         jassert (static_cast<int> (frameCount) <= getAudioProcessor().getBlockSize());
 
         // process params
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        const int numParams = 0;
+       #else
         const int numParams = juceParameters.getNumParameters();
+       #endif
         processEvents (realtimeEventListHead, numParams, static_cast<AUEventSampleTime> (timestamp->mSampleTime));
 
         if (lastTimeStamp.mSampleTime != timestamp->mSampleTime)
@@ -1486,6 +1498,8 @@ private:
     //==============================================================================
     void valueChangedFromHost (AUParameter* param, AUValue value)
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+       #else
         if (param != nullptr)
         {
             if (auto* p = getJuceParameterForAUAddress ([param address]))
@@ -1494,10 +1508,15 @@ private:
                 setAudioProcessorParameter (p, normalisedValue);
             }
         }
+       #endif
     }
 
     AUValue getValue (AUParameter* param)
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+        return 0;
+       #endif
+       
         if (param != nullptr)
         {
             if (auto* p = getJuceParameterForAUAddress ([param address]))

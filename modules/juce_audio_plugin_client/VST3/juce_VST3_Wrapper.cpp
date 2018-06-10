@@ -497,6 +497,18 @@ public:
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProgramChangeParameter)
     };
+    
+    #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+    int getNumParametersIfNonPublished(AudioProcessor* pluginInstance)
+    {
+        return 1 // bypass parameter
+               + (pluginInstance->getNumPrograms() > 1 ? 1 : 0) // preset parameter
+        #if JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS
+               + 1 // midi parameter
+        #endif
+        ;
+    }
+    #endif
 
     //==============================================================================
     tresult PLUGIN_API setChannelContextInfos (Vst::IAttributeList* list) override
@@ -653,7 +665,10 @@ public:
 
     void audioProcessorParameterChanged (AudioProcessor*, int index, float newValue) override
     {
+       #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+       #else
         paramChanged (audioProcessor->getVSTParamIDForIndex (index), newValue);
+       #endif
     }
 
     void audioProcessorChanged (AudioProcessor*) override
@@ -731,7 +746,11 @@ private:
                 const bool forceLegacyParamIDs = false;
                #endif
 
+               #if JUCE_WRAPPERS_DONT_PUBLISH_PARAMETERS
+                auto n = 0;
+               #else
                 auto n = audioProcessor->getNumParameters();
+               #endif
 
                 for (int i = 0; i < n; ++i)
                 {
